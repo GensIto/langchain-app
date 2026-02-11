@@ -1,4 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { Button } from "@/components/ui/button";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 // import { CloudflareWorkersAI } from "@langchain/cloudflare";
 // import { env } from "cloudflare:workers";
@@ -38,6 +39,12 @@ function App() {
         <p className='text-2xl md:text-3xl text-gray-300 mb-4 font-light'>
           {response}
         </p>
+        <Link to='/signup'>
+          <Button>Sign up</Button>
+        </Link>
+        <Link to='/signin'>
+          <Button>Sign in</Button>
+        </Link>
       </section>
     </div>
   );
