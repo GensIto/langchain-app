@@ -1,55 +1,40 @@
+import { useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 
 import { updateProject } from "@/serverFunction/project/project.functions";
 
-import { TOAST_MESSAGES } from "../constants";
-
 import type { EditableProject } from "../../types";
 
-export function useEditProject() {
-	const [isOpen, setIsOpen] = useState(false);
-	const [editingProject, setEditingProject] = useState<EditableProject | null>(null);
-	const [projectName, setProjectName] = useState("");
-	const [projectDescription, setProjectDescription] = useState("");
-
-	const openEditDialog = (project: EditableProject) => {
-		setEditingProject(project);
-		setProjectName(project.name);
-		setProjectDescription(project.description || "");
-		setIsOpen(true);
-	};
+export function useEditProject(project: EditableProject | null, onClose: () => void) {
+	const router = useRouter();
+	const [projectName, setProjectName] = useState(project?.name ?? "");
+	const [projectDescription, setProjectDescription] = useState(project?.description ?? "");
 
 	const handleEdit = async () => {
-		if (!editingProject) return;
+		if (!project) return;
 		try {
 			await updateProject({
 				data: {
-					id: editingProject.id,
+					id: project.id,
 					name: projectName,
 					description: projectDescription || undefined,
 				},
 			});
-			toast.success(TOAST_MESSAGES.updateSuccess);
-			setIsOpen(false);
-			setEditingProject(null);
-			setProjectName("");
-			setProjectDescription("");
-			window.location.reload();
+			toast.success("プロジェクトを更新しました");
+			onClose();
+			void router.invalidate();
 		} catch (error) {
-			toast.error(TOAST_MESSAGES.updateError);
+			toast.error("プロジェクトの更新に失敗しました");
 			console.error(error);
 		}
 	};
 
 	return {
-		isOpen,
-		setIsOpen,
 		projectName,
-		setProjectName,
+		onProjectNameChange: setProjectName,
 		projectDescription,
-		setProjectDescription,
-		openEditDialog,
-		handleEdit,
+		onProjectDescriptionChange: setProjectDescription,
+		onSubmit: handleEdit,
 	};
 }

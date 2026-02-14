@@ -1,13 +1,13 @@
 ---
 name: component-refactoring
-description: Reactコンポーネントのリファクタリングスキル。モノリシックなルートコンポーネントを関心ごとに分離し、再利用可能なコンポーネント構造に変換します。
+description: Reactコンポーネントのリファクタリングスキル。モノリシックなルートコンポーネントを関心ごとに分離する。
 ---
 
 # コンポーネントリファクタリング
 
 モノリシックなルートコンポーネントを関心分離した構造に分解する。
 
-**リファレンス実装**: `src/components/companies/projects/` を必ず読んでからパターンに従うこと。
+**リファレンス実装**: `src/components/companies/projects/` — 特に `ProjectList/ProjectList.tsx` と各コンポーネントの `.tsx` ファイルを読むこと。
 
 ---
 
@@ -15,28 +15,35 @@ description: Reactコンポーネントのリファクタリングスキル。�
 
 ```
 src/components/<ドメイン>/<機能名>/
-├── index.ts              # top-level barrel
+├── index.ts              # top-level barrel (コンポーネントのみexport)
 ├── types.ts              # 共有エンティティ型
 ├── <Component>/          # 各UIコンポーネントが独立ディレクトリ
-│   ├── index.ts          # barrel (コンポーネント + hook)
-│   ├── <Component>.tsx   # UI (プレゼンテーショナル)
-│   ├── types.ts          # Props型
-│   ├── constants.ts      # TOAST_MESSAGES, LABELS 等 (as const)
-│   ├── hooks/            # use<Action>.ts (状態+副作用)
-│   └── functions/        # <funcName>.ts (純粋関数, 関数名=ファイル名)
+│   ├── index.ts          # barrel (コンポーネントのみexport)
+│   ├── <Component>.tsx   # UI + 内部でhookを呼ぶ
+│   ├── hooks/            # (必要な場合のみ) use<Action>.ts
+│   └── functions/        # (必要な場合のみ) <funcName>.ts
 ```
 
 ## ルール
 
-- **types.ts**: トップレベル=共有型、サブ=Props型。共有型は `../types` から `import type`
-- **constants.ts**: そのコンポーネントが使う定数のみ。`as const`
-- **hooks/**: CRUD操作ごとに分離。対応するコンポーネントのディレクトリに配置
-- **functions/**: 関数名をファイル名にする。Reactに依存しない純粋関数
-- **Dialog**: CreateはDialogTrigger内包、Editはトリガーなし
-- **List**: オーケストレーション層。hookを呼び出し子にprops配布
+### hook配置
+- **hookは使うUIコンポーネント内部で呼ぶ**。親からpropsで注入しない
+- hookはそのコンポーネントの `hooks/` に配置し、barrelからはexportしない
+- hookはフォーム状態・API呼び出し・toastを担当。開閉状態は持たない
+
+### コンポーネント間の調整
+- **兄弟間の調整state** (Dialog開閉、編集対象) は親のListコンポーネントに `useState` で持つ
+- Dialog: `open`/`onOpenChange`を外部から受け取り、フォームロジックは内部hook
+- Edit Dialog: `project`/`onClose`を受け取り、`key={project?.id}`でリマウントしてstate初期化
+
+### その他
+- **constants.ts は作らない**: i18n未導入なら文字列はインライン
+- **データ再取得**: `useRouter().invalidate()` を使う (`window.location.reload()` 禁止)
+- **functions/**: 関数名=ファイル名。Reactに依存しない純粋関数
+- **小さいコンポーネント**: EmptyState等は型をファイル内に定義。hooks/やtypes.ts不要
 - **ルートファイル**: Route定義 + loader + `useLoaderData()` → コンポーネントに渡すだけ
 
 ## 手順
 
-1. トップレベル `types.ts` → 各サブディレクトリ (`types` → `constants` → `functions` → `hooks` → `.tsx` → `index`) → List → トップ `index.ts` → ルート簡素化
+1. トップレベル `types.ts` → 各サブディレクトリ (`functions` → `hooks` → `.tsx` → `index`) → List → トップ `index.ts` → ルート簡素化
 2. `npx tsc --noEmit` と `npx eslint` で検証

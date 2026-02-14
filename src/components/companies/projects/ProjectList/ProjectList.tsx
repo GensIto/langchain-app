@@ -1,21 +1,20 @@
 import { useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 
-import { CreateProjectDialog, useCreateProject } from "../CreateProjectDialog";
-import { EditProjectDialog, useEditProject } from "../EditProjectDialog";
+import { CreateProjectDialog } from "../CreateProjectDialog";
+import { EditProjectDialog } from "../EditProjectDialog";
 import { EmptyState } from "../EmptyState";
-import { ProjectCard, useDeleteProject } from "../ProjectCard";
+import { ProjectCard } from "../ProjectCard";
 
-import { LABELS } from "./constants";
-
+import type { EditableProject } from "../types";
 import type { ProjectListProps } from "./types";
 
 export function ProjectList({ projects, company, companyId }: ProjectListProps) {
 	const navigate = useNavigate();
-	const createProject = useCreateProject({ companyId });
-	const editProject = useEditProject();
-	const { handleDelete } = useDeleteProject();
+	const [isCreateOpen, setIsCreateOpen] = useState(false);
+	const [editingProject, setEditingProject] = useState<EditableProject | null>(null);
 
 	const handleNavigateToLogs = (projectId: string) => {
 		void navigate({
@@ -24,31 +23,26 @@ export function ProjectList({ projects, company, companyId }: ProjectListProps) 
 		});
 	};
 
-	const handleNavigateBack = () => {
-		void navigate({ to: "/companies" });
-	};
-
 	return (
 		<div className='min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900'>
 			<div className='container mx-auto py-8 px-4'>
 				<div className='mb-6'>
-					<Button variant='outline' onClick={handleNavigateBack} className='mb-4'>
-						{LABELS.backToCompanies}
+					<Button
+						variant='outline'
+						onClick={() => void navigate({ to: "/companies" })}
+						className='mb-4'
+					>
+						← 会社一覧に戻る
 					</Button>
 					<h2 className='text-2xl font-semibold text-gray-300'>{company.name}</h2>
 				</div>
 
 				<div className='flex justify-between items-center mb-8'>
-					<h1 className='text-3xl font-bold text-white'>{LABELS.pageTitle}</h1>
+					<h1 className='text-3xl font-bold text-white'>プロジェクト一覧</h1>
 					<CreateProjectDialog
-						isOpen={createProject.isOpen}
-						onOpenChange={createProject.setIsOpen}
-						projectName={createProject.projectName}
-						onProjectNameChange={createProject.setProjectName}
-						projectDescription={createProject.projectDescription}
-						onProjectDescriptionChange={createProject.setProjectDescription}
-						onSubmit={createProject.handleCreate}
-						onCancel={() => createProject.setIsOpen(false)}
+						companyId={companyId}
+						open={isCreateOpen}
+						onOpenChange={setIsCreateOpen}
 					/>
 				</div>
 
@@ -57,26 +51,18 @@ export function ProjectList({ projects, company, companyId }: ProjectListProps) 
 						<ProjectCard
 							key={project.id}
 							project={project}
-							onEdit={editProject.openEditDialog}
-							onDelete={handleDelete}
+							onEdit={setEditingProject}
 							onNavigateToLogs={handleNavigateToLogs}
 						/>
 					))}
 				</div>
 
-				{projects.length === 0 && (
-					<EmptyState onCreateClick={() => createProject.setIsOpen(true)} />
-				)}
+				{projects.length === 0 && <EmptyState onCreateClick={() => setIsCreateOpen(true)} />}
 
 				<EditProjectDialog
-					isOpen={editProject.isOpen}
-					onOpenChange={editProject.setIsOpen}
-					projectName={editProject.projectName}
-					onProjectNameChange={editProject.setProjectName}
-					projectDescription={editProject.projectDescription}
-					onProjectDescriptionChange={editProject.setProjectDescription}
-					onSubmit={editProject.handleEdit}
-					onCancel={() => editProject.setIsOpen(false)}
+					key={editingProject?.id}
+					project={editingProject}
+					onClose={() => setEditingProject(null)}
 				/>
 			</div>
 		</div>

@@ -11,53 +11,57 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
-import { FORM_CONFIG, LABELS, PLACEHOLDERS } from "./constants";
+import { useEditProject } from "./hooks/useEditProject";
 
-import type { EditProjectDialogProps } from "./types";
+import type { EditableProject } from "../types";
 
-export function EditProjectDialog({
-	isOpen,
-	onOpenChange,
-	projectName,
-	onProjectNameChange,
-	projectDescription,
-	onProjectDescriptionChange,
-	onSubmit,
-	onCancel,
-}: EditProjectDialogProps) {
+type EditProjectDialogProps = {
+	project: EditableProject | null;
+	onClose: () => void;
+};
+
+export function EditProjectDialog({ project, onClose }: EditProjectDialogProps) {
+	const {
+		projectName,
+		onProjectNameChange,
+		projectDescription,
+		onProjectDescriptionChange,
+		onSubmit,
+	} = useEditProject(project, onClose);
+
 	return (
-		<Dialog open={isOpen} onOpenChange={onOpenChange}>
+		<Dialog open={project !== null} onOpenChange={(open) => !open && onClose()}>
 			<DialogContent>
 				<DialogHeader>
-					<DialogTitle>{LABELS.dialogTitle}</DialogTitle>
-					<DialogDescription>{LABELS.dialogDescription}</DialogDescription>
+					<DialogTitle>プロジェクトを編集</DialogTitle>
+					<DialogDescription>プロジェクトの情報を変更してください</DialogDescription>
 				</DialogHeader>
 				<div className='grid gap-4 py-4'>
 					<div className='grid gap-2'>
-						<Label htmlFor='edit-name'>{LABELS.projectNameLabel}</Label>
+						<Label htmlFor='edit-name'>プロジェクト名</Label>
 						<Input
 							id='edit-name'
 							value={projectName}
 							onChange={(e) => onProjectNameChange(e.target.value)}
-							placeholder={PLACEHOLDERS.projectName}
+							placeholder='プロジェクト名を入力'
 						/>
 					</div>
 					<div className='grid gap-2'>
-						<Label htmlFor='edit-description'>{LABELS.descriptionLabel}</Label>
+						<Label htmlFor='edit-description'>説明</Label>
 						<Textarea
 							id='edit-description'
 							value={projectDescription}
 							onChange={(e) => onProjectDescriptionChange(e.target.value)}
-							placeholder={PLACEHOLDERS.projectDescription}
-							rows={FORM_CONFIG.descriptionRows}
+							placeholder='プロジェクトの説明を入力'
+							rows={4}
 						/>
 					</div>
 				</div>
 				<DialogFooter>
-					<Button variant='outline' onClick={onCancel}>
-						{LABELS.cancelButton}
+					<Button variant='outline' onClick={onClose}>
+						キャンセル
 					</Button>
-					<Button onClick={onSubmit}>{LABELS.submitButton}</Button>
+					<Button onClick={onSubmit}>更新</Button>
 				</DialogFooter>
 			</DialogContent>
 		</Dialog>

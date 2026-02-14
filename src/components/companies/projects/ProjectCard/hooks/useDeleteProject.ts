@@ -1,18 +1,19 @@
+import { useRouter } from "@tanstack/react-router";
 import { toast } from "sonner";
 
 import { deleteProject } from "@/serverFunction/project/project.functions";
 
-import { CONFIRM_MESSAGES, TOAST_MESSAGES } from "../constants";
-
 export function useDeleteProject() {
+	const router = useRouter();
+
 	const handleDelete = async (id: string) => {
-		if (!confirm(CONFIRM_MESSAGES.deleteProject)) return;
+		if (!confirm("このプロジェクトを削除しますか?")) return;
 		try {
 			await deleteProject({ data: { id } });
-			toast.success(TOAST_MESSAGES.deleteSuccess);
-			window.location.reload();
+			toast.success("プロジェクトを削除しました");
+			void router.invalidate();
 		} catch (error) {
-			toast.error(TOAST_MESSAGES.deleteError);
+			toast.error("プロジェクトの削除に失敗しました");
 			console.error(error);
 		}
 	};

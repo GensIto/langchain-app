@@ -12,56 +12,59 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
-import { FORM_CONFIG, LABELS, PLACEHOLDERS } from "./constants";
+import { useCreateProject } from "./hooks/useCreateProject";
 
-import type { CreateProjectDialogProps } from "./types";
+type CreateProjectDialogProps = {
+	companyId: string;
+	open: boolean;
+	onOpenChange: (open: boolean) => void;
+};
 
-export function CreateProjectDialog({
-	isOpen,
-	onOpenChange,
-	projectName,
-	onProjectNameChange,
-	projectDescription,
-	onProjectDescriptionChange,
-	onSubmit,
-	onCancel,
-}: CreateProjectDialogProps) {
+export function CreateProjectDialog({ companyId, open, onOpenChange }: CreateProjectDialogProps) {
+	const {
+		projectName,
+		onProjectNameChange,
+		projectDescription,
+		onProjectDescriptionChange,
+		onSubmit,
+	} = useCreateProject({ companyId, onSuccess: () => onOpenChange(false) });
+
 	return (
-		<Dialog open={isOpen} onOpenChange={onOpenChange}>
+		<Dialog open={open} onOpenChange={onOpenChange}>
 			<DialogTrigger asChild>
-				<Button>{LABELS.createButton}</Button>
+				<Button>新規作成</Button>
 			</DialogTrigger>
 			<DialogContent>
 				<DialogHeader>
-					<DialogTitle>{LABELS.dialogTitle}</DialogTitle>
-					<DialogDescription>{LABELS.dialogDescription}</DialogDescription>
+					<DialogTitle>プロジェクトを作成</DialogTitle>
+					<DialogDescription>新しいプロジェクトの情報を入力してください</DialogDescription>
 				</DialogHeader>
 				<div className='grid gap-4 py-4'>
 					<div className='grid gap-2'>
-						<Label htmlFor='name'>{LABELS.projectNameLabel}</Label>
+						<Label htmlFor='name'>プロジェクト名</Label>
 						<Input
 							id='name'
 							value={projectName}
 							onChange={(e) => onProjectNameChange(e.target.value)}
-							placeholder={PLACEHOLDERS.projectName}
+							placeholder='プロジェクト名を入力'
 						/>
 					</div>
 					<div className='grid gap-2'>
-						<Label htmlFor='description'>{LABELS.descriptionLabel}</Label>
+						<Label htmlFor='description'>説明</Label>
 						<Textarea
 							id='description'
 							value={projectDescription}
 							onChange={(e) => onProjectDescriptionChange(e.target.value)}
-							placeholder={PLACEHOLDERS.projectDescription}
-							rows={FORM_CONFIG.descriptionRows}
+							placeholder='プロジェクトの説明を入力'
+							rows={4}
 						/>
 					</div>
 				</div>
 				<DialogFooter>
-					<Button variant='outline' onClick={onCancel}>
-						{LABELS.cancelButton}
+					<Button variant='outline' onClick={() => onOpenChange(false)}>
+						キャンセル
 					</Button>
-					<Button onClick={onSubmit}>{LABELS.submitButton}</Button>
+					<Button onClick={onSubmit}>作成</Button>
 				</DialogFooter>
 			</DialogContent>
 		</Dialog>

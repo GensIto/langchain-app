@@ -1,19 +1,19 @@
+import { useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 
 import { createProject } from "@/serverFunction/project/project.functions";
 
-import { TOAST_MESSAGES } from "../constants";
-
-export function useCreateProject({ companyId }: { companyId: string }) {
-	const [isOpen, setIsOpen] = useState(false);
+export function useCreateProject({
+	companyId,
+	onSuccess,
+}: {
+	companyId: string;
+	onSuccess: () => void;
+}) {
+	const router = useRouter();
 	const [projectName, setProjectName] = useState("");
 	const [projectDescription, setProjectDescription] = useState("");
-
-	const resetForm = () => {
-		setProjectName("");
-		setProjectDescription("");
-	};
 
 	const handleCreate = async () => {
 		try {
@@ -24,23 +24,22 @@ export function useCreateProject({ companyId }: { companyId: string }) {
 					description: projectDescription || undefined,
 				},
 			});
-			toast.success(TOAST_MESSAGES.createSuccess);
-			setIsOpen(false);
-			resetForm();
-			window.location.reload();
+			toast.success("プロジェクトを作成しました");
+			onSuccess();
+			setProjectName("");
+			setProjectDescription("");
+			void router.invalidate();
 		} catch (error) {
-			toast.error(TOAST_MESSAGES.createError);
+			toast.error("プロジェクトの作成に失敗しました");
 			console.error(error);
 		}
 	};
 
 	return {
-		isOpen,
-		setIsOpen,
 		projectName,
-		setProjectName,
+		onProjectNameChange: setProjectName,
 		projectDescription,
-		setProjectDescription,
-		handleCreate,
+		onProjectDescriptionChange: setProjectDescription,
+		onSubmit: handleCreate,
 	};
 }
