@@ -201,6 +201,21 @@ function Projects() {
                   作成日:{" "}
                   {new Date(project.createdAt).toLocaleDateString("ja-JP")}
                 </div>
+                <div className='flex gap-2 mb-2'>
+                  <Button
+                    variant='default'
+                    size='sm'
+                    onClick={() =>
+                      navigate({
+                        to: "/projects/$projectId/logs",
+                        params: { projectId: project.id },
+                      })
+                    }
+                    className='w-full'
+                  >
+                    ログを見る
+                  </Button>
+                </div>
                 <div className='flex gap-2'>
                   <Button
                     variant='outline'

@@ -15,6 +15,13 @@
       "when": 1770908739302,
       "tag": "0001_confused_quentin_quire",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1771037652627,
+      "tag": "0002_optimal_dreaming_celestial",
+      "breakpoints": true
     }
   ]
 }
