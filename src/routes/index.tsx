@@ -1,6 +1,8 @@
 import { Button } from "@/components/ui/button";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { useSession } from "@/lib/auth-client";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
+import { useEffect } from "react";
 // import { CloudflareWorkersAI } from "@langchain/cloudflare";
 // import { env } from "cloudflare:workers";
 
@@ -27,6 +29,15 @@ export const Route = createFileRoute("/")({
 
 function App() {
   const response = Route.useLoaderData();
+
+  const navigate = useNavigate();
+  const { data: session } = useSession();
+
+  useEffect(() => {
+    if (session) {
+      navigate({ to: "/companies" });
+    }
+  }, [session, navigate]);
 
   console.log("LLM Response:", response);
 
