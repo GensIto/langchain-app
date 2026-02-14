@@ -14,3 +14,6 @@ export const auth = betterAuth({
   },
   plugins: [tanstackStartCookies()],
 });
+
+export type Session = Awaited<ReturnType<typeof auth.api.getSession>>;
+export type RequiredSession = NonNullable<Session>;

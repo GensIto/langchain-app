@@ -25,8 +25,8 @@ import {
   createProject,
   updateProject,
   deleteProject,
-} from "@/serverFunction/project.server";
-import { getCompany } from "@/serverFunction/company.server";
+} from "@/serverFunction/project/project.functions";
+import { getCompany } from "@/serverFunction/company/company.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute(

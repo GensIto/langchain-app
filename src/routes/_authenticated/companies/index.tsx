@@ -24,7 +24,7 @@ import {
   createCompany,
   updateCompany,
   deleteCompany,
-} from "@/serverFunction/company.server";
+} from "@/serverFunction/company/company.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/companies/")({
