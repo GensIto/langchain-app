@@ -38,3 +38,13 @@ export const updateTagSchema = z.object({
 export const deleteTagSchema = z.object({
   id: z.string(),
 });
+
+export type GetLogsInput = z.infer<typeof getLogsSchema>;
+export type GetLogInput = z.infer<typeof getLogSchema>;
+export type CreateLogInput = z.infer<typeof createLogSchema>;
+export type UpdateLogInput = z.infer<typeof updateLogSchema>;
+export type DeleteLogInput = z.infer<typeof deleteLogSchema>;
+export type GetTagsInput = z.infer<typeof getTagsSchema>;
+export type CreateTagInput = z.infer<typeof createTagSchema>;
+export type UpdateTagInput = z.infer<typeof updateTagSchema>;
+export type DeleteTagInput = z.infer<typeof deleteTagSchema>;

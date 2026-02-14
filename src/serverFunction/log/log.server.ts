@@ -4,27 +4,16 @@ import { projects } from "@/db/projects";
 import { eq, and } from "drizzle-orm";
 import type { RequiredSession } from "@/lib/auth";
 import type {
-  getLogsSchema,
-  getLogSchema,
-  createLogSchema,
-  updateLogSchema,
-  deleteLogSchema,
-  getTagsSchema,
-  createTagSchema,
-  updateTagSchema,
-  deleteTagSchema,
+  CreateLogInput,
+  CreateTagInput,
+  DeleteLogInput,
+  DeleteTagInput,
+  GetLogInput,
+  GetLogsInput,
+  GetTagsInput,
+  UpdateLogInput,
+  UpdateTagInput,
 } from "./schemas";
-import type z from "zod";
-
-type GetLogsInput = z.infer<typeof getLogsSchema>;
-type GetLogInput = z.infer<typeof getLogSchema>;
-type CreateLogInput = z.infer<typeof createLogSchema>;
-type UpdateLogInput = z.infer<typeof updateLogSchema>;
-type DeleteLogInput = z.infer<typeof deleteLogSchema>;
-type GetTagsInput = z.infer<typeof getTagsSchema>;
-type CreateTagInput = z.infer<typeof createTagSchema>;
-type UpdateTagInput = z.infer<typeof updateTagSchema>;
-type DeleteTagInput = z.infer<typeof deleteTagSchema>;
 
 async function verifyProjectOwnership(projectId: string, userId: string) {
   const project = await getDb()
@@ -40,10 +29,7 @@ async function verifyProjectOwnership(projectId: string, userId: string) {
   return project;
 }
 
-export async function getAllLogs(
-  data: GetLogsInput,
-  session: RequiredSession,
-) {
+export async function getAllLogs(data: GetLogsInput, session: RequiredSession) {
   // Verify project ownership
   await verifyProjectOwnership(data.projectId, session.user.id);
 
@@ -51,10 +37,7 @@ export async function getAllLogs(
     .select()
     .from(logs)
     .where(
-      and(
-        eq(logs.projectId, data.projectId),
-        eq(logs.userId, session.user.id),
-      ),
+      and(eq(logs.projectId, data.projectId), eq(logs.userId, session.user.id)),
     )
     .all();
 
@@ -193,7 +176,10 @@ export async function updateExistingLog(
   return log;
 }
 
-export async function removeLog(data: DeleteLogInput, session: RequiredSession) {
+export async function removeLog(
+  data: DeleteLogInput,
+  session: RequiredSession,
+) {
   const result = await getDb()
     .delete(logs)
     .where(and(eq(logs.id, data.id), eq(logs.userId, session.user.id)))
@@ -207,10 +193,7 @@ export async function removeLog(data: DeleteLogInput, session: RequiredSession) 
   return { success: true };
 }
 
-export async function getAllTags(
-  data: GetTagsInput,
-  session: RequiredSession,
-) {
+export async function getAllTags(data: GetTagsInput, session: RequiredSession) {
   const allTags = await getDb()
     .select()
     .from(tags)
@@ -280,7 +263,10 @@ export async function updateExistingTag(
   return tag;
 }
 
-export async function removeTag(data: DeleteTagInput, session: RequiredSession) {
+export async function removeTag(
+  data: DeleteTagInput,
+  session: RequiredSession,
+) {
   const result = await getDb()
     .delete(tags)
     .where(and(eq(tags.id, data.id), eq(tags.userId, session.user.id)))

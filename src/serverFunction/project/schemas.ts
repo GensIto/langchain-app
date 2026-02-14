@@ -1,11 +1,11 @@
 import z from "zod";
 
 export const getProjectsSchema = z.object({
-  companyId: z.string()
+  companyId: z.string(),
 });
 
 export const getProjectSchema = z.object({
-  id: z.string()
+  id: z.string(),
 });
 
 export const createProjectSchema = z.object({
@@ -21,5 +21,11 @@ export const updateProjectSchema = z.object({
 });
 
 export const deleteProjectSchema = z.object({
-  id: z.string()
+  id: z.string(),
 });
+
+export type GetProjectsInput = z.infer<typeof getProjectsSchema>;
+export type GetProjectInput = z.infer<typeof getProjectSchema>;
+export type CreateProjectInput = z.infer<typeof createProjectSchema>;
+export type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
+export type DeleteProjectInput = z.infer<typeof deleteProjectSchema>;

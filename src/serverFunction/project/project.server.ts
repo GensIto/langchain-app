@@ -4,19 +4,12 @@ import { projects } from "@/db/projects";
 import { eq, and } from "drizzle-orm";
 import type { RequiredSession } from "@/lib/auth";
 import type {
-  getProjectsSchema,
-  getProjectSchema,
-  createProjectSchema,
-  updateProjectSchema,
-  deleteProjectSchema,
+  CreateProjectInput,
+  DeleteProjectInput,
+  GetProjectInput,
+  GetProjectsInput,
+  UpdateProjectInput,
 } from "./schemas";
-import type z from "zod";
-
-type GetProjectsInput = z.infer<typeof getProjectsSchema>;
-type GetProjectInput = z.infer<typeof getProjectSchema>;
-type CreateProjectInput = z.infer<typeof createProjectSchema>;
-type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
-type DeleteProjectInput = z.infer<typeof deleteProjectSchema>;
 
 async function verifyCompanyOwnership(companyId: string, userId: string) {
   const company = await getDb()

@@ -3,17 +3,11 @@ import { companies } from "@/db/companies";
 import { eq, and } from "drizzle-orm";
 import type { RequiredSession } from "@/lib/auth";
 import type {
-  getCompanySchema,
-  createCompanySchema,
-  updateCompanySchema,
-  deleteCompanySchema,
+  CreateCompanyInput,
+  DeleteCompanyInput,
+  GetCompanyInput,
+  UpdateCompanyInput,
 } from "./schemas";
-import type z from "zod";
-
-type GetCompanyInput = z.infer<typeof getCompanySchema>;
-type CreateCompanyInput = z.infer<typeof createCompanySchema>;
-type UpdateCompanyInput = z.infer<typeof updateCompanySchema>;
-type DeleteCompanyInput = z.infer<typeof deleteCompanySchema>;
 
 export async function getAllCompanies(session: RequiredSession) {
   const result = await getDb()
@@ -25,7 +19,10 @@ export async function getAllCompanies(session: RequiredSession) {
   return result;
 }
 
-export async function getCompanyById(data: GetCompanyInput, session: RequiredSession) {
+export async function getCompanyById(
+  data: GetCompanyInput,
+  session: RequiredSession,
+) {
   const company = await getDb()
     .select()
     .from(companies)
