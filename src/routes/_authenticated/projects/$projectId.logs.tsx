@@ -197,9 +197,25 @@ function Logs() {
 							<DialogContent className='max-w-2xl'>
 								<DialogHeader>
 									<DialogTitle>タグ管理</DialogTitle>
-									<DialogDescription>タグの編集・削除ができます</DialogDescription>
+									<DialogDescription>タグの作成・編集・削除ができます</DialogDescription>
 								</DialogHeader>
 								<div className='py-4'>
+									<div className='flex gap-2 mb-4'>
+										<Input
+											placeholder='新しいタグ名'
+											value={newTagName}
+											onChange={(e) => setNewTagName(e.target.value)}
+											onKeyDown={(e) => {
+												if (e.key === "Enter") {
+													e.preventDefault();
+													void handleCreateTag();
+												}
+											}}
+										/>
+										<Button onClick={handleCreateTag} size='sm'>
+											追加
+										</Button>
+									</div>
 									<div className='space-y-2'>
 										{tags.map((tag) => (
 											<div
