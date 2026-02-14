@@ -11,6 +11,8 @@ import type {
   deleteLogSchema,
   getTagsSchema,
   createTagSchema,
+  updateTagSchema,
+  deleteTagSchema,
 } from "./schemas";
 import type z from "zod";
 
@@ -21,6 +23,8 @@ type UpdateLogInput = z.infer<typeof updateLogSchema>;
 type DeleteLogInput = z.infer<typeof deleteLogSchema>;
 type GetTagsInput = z.infer<typeof getTagsSchema>;
 type CreateTagInput = z.infer<typeof createTagSchema>;
+type UpdateTagInput = z.infer<typeof updateTagSchema>;
+type DeleteTagInput = z.infer<typeof deleteTagSchema>;
 
 async function verifyProjectOwnership(projectId: string, userId: string) {
   const project = await getDb()
@@ -243,4 +247,49 @@ export async function createNewTag(
     .get();
 
   return tag;
+}
+
+export async function updateExistingTag(
+  data: UpdateTagInput,
+  session: RequiredSession,
+) {
+  // Check if another tag with the same name exists
+  const existingTag = await getDb()
+    .select()
+    .from(tags)
+    .where(and(eq(tags.userId, session.user.id), eq(tags.name, data.name)))
+    .get();
+
+  if (existingTag && existingTag.id !== data.id) {
+    throw new Error("Tag with this name already exists");
+  }
+
+  const tag = await getDb()
+    .update(tags)
+    .set({
+      name: data.name,
+    })
+    .where(and(eq(tags.id, data.id), eq(tags.userId, session.user.id)))
+    .returning()
+    .get();
+
+  if (!tag) {
+    throw new Error("Tag not found");
+  }
+
+  return tag;
+}
+
+export async function removeTag(data: DeleteTagInput, session: RequiredSession) {
+  const result = await getDb()
+    .delete(tags)
+    .where(and(eq(tags.id, data.id), eq(tags.userId, session.user.id)))
+    .returning()
+    .get();
+
+  if (!result) {
+    throw new Error("Tag not found");
+  }
+
+  return { success: true };
 }

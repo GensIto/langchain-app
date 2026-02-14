@@ -29,3 +29,12 @@ export const getTagsSchema = z.object({});
 export const createTagSchema = z.object({
   name: z.string().min(1).max(50),
 });
+
+export const updateTagSchema = z.object({
+  id: z.string(),
+  name: z.string().min(1).max(50),
+});
+
+export const deleteTagSchema = z.object({
+  id: z.string(),
+});

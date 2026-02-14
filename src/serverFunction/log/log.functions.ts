@@ -7,6 +7,8 @@ import {
   deleteLogSchema,
   getTagsSchema,
   createTagSchema,
+  updateTagSchema,
+  deleteTagSchema,
 } from "./schemas";
 import {
   getAllLogs,
@@ -16,6 +18,8 @@ import {
   removeLog,
   getAllTags,
   createNewTag,
+  updateExistingTag,
+  removeTag,
 } from "./log.server";
 import { authMiddleware } from "@/lib/middleware";
 
@@ -80,4 +84,22 @@ export const createTag = createServerFn({
   .inputValidator(createTagSchema)
   .handler(async ({ data, context }) => {
     return createNewTag(data, context.session);
+  });
+
+export const updateTag = createServerFn({
+  method: "POST",
+})
+  .middleware([authMiddleware])
+  .inputValidator(updateTagSchema)
+  .handler(async ({ data, context }) => {
+    return updateExistingTag(data, context.session);
+  });
+
+export const deleteTag = createServerFn({
+  method: "POST",
+})
+  .middleware([authMiddleware])
+  .inputValidator(deleteTagSchema)
+  .handler(async ({ data, context }) => {
+    return removeTag(data, context.session);
   });

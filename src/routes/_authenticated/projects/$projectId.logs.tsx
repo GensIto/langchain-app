@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,10 +28,13 @@ import {
   deleteLog,
   getTags,
   createTag,
+  updateTag,
+  deleteTag,
 } from "@/serverFunction/log/log.functions";
 import { getProject } from "@/serverFunction/project/project.functions";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 export const Route = createFileRoute("/_authenticated/projects/$projectId/logs")({
   component: Logs,
@@ -55,13 +58,17 @@ function Logs() {
   const { project, logs, tags } = Route.useLoaderData();
   const { projectId } = Route.useParams();
   const navigate = useNavigate();
+  const router = useRouter();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [isTagManageOpen, setIsTagManageOpen] = useState(false);
   const [editingLog, setEditingLog] = useState<LogWithTags | null>(null);
+  const [editingTag, setEditingTag] = useState<{ id: string; name: string } | null>(null);
   const [logContent, setLogContent] = useState("");
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [newTagName, setNewTagName] = useState("");
+  const [editTagName, setEditTagName] = useState("");
   const [previewContent, setPreviewContent] = useState("");
 
   const handleCreate = async () => {
@@ -77,7 +84,7 @@ function Logs() {
       setIsCreateOpen(false);
       setLogContent("");
       setSelectedTagIds([]);
-      window.location.reload();
+      router.invalidate();
     } catch (error) {
       toast.error("ログの作成に失敗しました");
       console.error(error);
@@ -99,7 +106,7 @@ function Logs() {
       setEditingLog(null);
       setLogContent("");
       setSelectedTagIds([]);
-      window.location.reload();
+      router.invalidate();
     } catch (error) {
       toast.error("ログの更新に失敗しました");
       console.error(error);
@@ -111,7 +118,7 @@ function Logs() {
     try {
       await deleteLog({ data: { id } });
       toast.success("ログを削除しました");
-      window.location.reload();
+      router.invalidate();
     } catch (error) {
       toast.error("ログの削除に失敗しました");
       console.error(error);
@@ -124,9 +131,35 @@ function Logs() {
       await createTag({ data: { name: newTagName } });
       toast.success("タグを作成しました");
       setNewTagName("");
-      window.location.reload();
+      router.invalidate();
     } catch (error) {
       toast.error("タグの作成に失敗しました");
+      console.error(error);
+    }
+  };
+
+  const handleUpdateTag = async () => {
+    if (!editingTag || !editTagName.trim()) return;
+    try {
+      await updateTag({ data: { id: editingTag.id, name: editTagName } });
+      toast.success("タグを更新しました");
+      setEditingTag(null);
+      setEditTagName("");
+      router.invalidate();
+    } catch (error) {
+      toast.error("タグの更新に失敗しました");
+      console.error(error);
+    }
+  };
+
+  const handleDeleteTag = async (id: string) => {
+    if (!confirm("このタグを削除しますか?")) return;
+    try {
+      await deleteTag({ data: { id } });
+      toast.success("タグを削除しました");
+      router.invalidate();
+    } catch (error) {
+      toast.error("タグの削除に失敗しました");
       console.error(error);
     }
   };
@@ -167,10 +200,89 @@ function Logs() {
 
         <div className='flex justify-between items-center mb-8'>
           <h1 className='text-3xl font-bold text-white'>ログ一覧</h1>
-          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-            <DialogTrigger asChild>
-              <Button>新規作成</Button>
-            </DialogTrigger>
+          <div className='flex gap-2'>
+            <Dialog open={isTagManageOpen} onOpenChange={setIsTagManageOpen}>
+              <DialogTrigger asChild>
+                <Button variant='outline'>タグ管理</Button>
+              </DialogTrigger>
+              <DialogContent className='max-w-2xl'>
+                <DialogHeader>
+                  <DialogTitle>タグ管理</DialogTitle>
+                  <DialogDescription>
+                    タグの編集・削除ができます
+                  </DialogDescription>
+                </DialogHeader>
+                <div className='py-4'>
+                  <div className='space-y-2'>
+                    {tags.map((tag) => (
+                      <div
+                        key={tag.id}
+                        className='flex items-center justify-between p-3 border rounded-md'
+                      >
+                        {editingTag?.id === tag.id ? (
+                          <div className='flex items-center gap-2 flex-1'>
+                            <Input
+                              value={editTagName}
+                              onChange={(e) => setEditTagName(e.target.value)}
+                              placeholder='タグ名'
+                              className='flex-1'
+                            />
+                            <Button size='sm' onClick={handleUpdateTag}>
+                              保存
+                            </Button>
+                            <Button
+                              size='sm'
+                              variant='outline'
+                              onClick={() => {
+                                setEditingTag(null);
+                                setEditTagName("");
+                              }}
+                            >
+                              キャンセル
+                            </Button>
+                          </div>
+                        ) : (
+                          <>
+                            <Badge variant='secondary'>{tag.name}</Badge>
+                            <div className='flex gap-2'>
+                              <Button
+                                size='sm'
+                                variant='outline'
+                                onClick={() => {
+                                  setEditingTag(tag);
+                                  setEditTagName(tag.name);
+                                }}
+                              >
+                                編集
+                              </Button>
+                              <Button
+                                size='sm'
+                                variant='destructive'
+                                onClick={() => handleDeleteTag(tag.id)}
+                              >
+                                削除
+                              </Button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    ))}
+                    {tags.length === 0 && (
+                      <p className='text-center text-gray-500 py-4'>
+                        タグがありません
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button onClick={() => setIsTagManageOpen(false)}>閉じる</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+            <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+              <DialogTrigger asChild>
+                <Button>新規作成</Button>
+              </DialogTrigger>
             <DialogContent className='max-w-4xl max-h-[90vh] overflow-y-auto'>
               <DialogHeader>
                 <DialogTitle>ログを作成</DialogTitle>
@@ -245,6 +357,7 @@ function Logs() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
 
         <div className='grid grid-cols-1 gap-6'>
@@ -291,7 +404,7 @@ function Logs() {
               </CardHeader>
               <CardContent>
                 <div className='prose prose-sm max-w-none dark:prose-invert line-clamp-3'>
-                  <ReactMarkdown>{log.content}</ReactMarkdown>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{log.content}</ReactMarkdown>
                 </div>
               </CardContent>
             </Card>
@@ -394,7 +507,7 @@ function Logs() {
             </DialogHeader>
             <div className='py-4'>
               <div className='prose prose-sm max-w-none dark:prose-invert border rounded-md p-4 bg-white dark:bg-slate-800'>
-                <ReactMarkdown>{previewContent}</ReactMarkdown>
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{previewContent}</ReactMarkdown>
               </div>
             </div>
             <DialogFooter>
