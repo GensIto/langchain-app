@@ -1,11 +1,9 @@
 ---
-name: component-refactoring
-description: Reactコンポーネントのリファクタリングスキル。モノリシックなルートコンポーネントを関心ごとに分離する。
+name: create-component
+description: Reactコンポーネント作成スキル。プロジェクトのディレクトリ規約・hook配置・フォーム管理パターンに従ってコンポーネントを作成する。
 ---
 
-# コンポーネントリファクタリング
-
-モノリシックなルートコンポーネントを関心分離した構造に分解する。
+# コンポーネント作成
 
 **リファレンス実装**: `src/components/companies/projects/` — 特に `ProjectList/ProjectList.tsx` と各コンポーネントの `.tsx` ファイルを読むこと。
 
@@ -29,7 +27,13 @@ src/components/<ドメイン>/<機能名>/
 ### hook配置
 - **hookは使うUIコンポーネント内部で呼ぶ**。親からpropsで注入しない
 - hookはそのコンポーネントの `hooks/` に配置し、barrelからはexportしない
-- hookはフォーム状態・API呼び出し・toastを担当。開閉状態は持たない
+- hookはフォーム管理・API呼び出し・toastを担当。開閉状態は持たない
+
+### フォーム
+- **TanStack Form (`useForm`)** を使う。`useState` で個別フィールドを管理しない
+- hookが `useForm()` の返り値をそのまま返し、コンポーネントが `form.Field` で描画
+- バリデーションは `validators.onSubmit` に zod スキーマを渡す
+- `form.state.isSubmitting` で送信中のUI制御 (disabled, ローディング文言)
 
 ### コンポーネント間の調整
 - **兄弟間の調整state** (Dialog開閉、編集対象) は親のListコンポーネントに `useState` で持つ
@@ -45,5 +49,5 @@ src/components/<ドメイン>/<機能名>/
 
 ## 手順
 
-1. トップレベル `types.ts` → 各サブディレクトリ (`functions` → `hooks` → `.tsx` → `index`) → List → トップ `index.ts` → ルート簡素化
+1. トップレベル `types.ts` → 各サブディレクトリ (`functions` → `hooks` → `.tsx` → `index`) → List → トップ `index.ts` → ルート接続
 2. `npx tsc --noEmit` と `npx eslint` で検証

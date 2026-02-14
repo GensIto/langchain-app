@@ -21,13 +21,7 @@ type CreateProjectDialogProps = {
 };
 
 export function CreateProjectDialog({ companyId, open, onOpenChange }: CreateProjectDialogProps) {
-	const {
-		projectName,
-		onProjectNameChange,
-		projectDescription,
-		onProjectDescriptionChange,
-		onSubmit,
-	} = useCreateProject({ companyId, onSuccess: () => onOpenChange(false) });
+	const form = useCreateProject({ companyId, onSuccess: () => onOpenChange(false) });
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
@@ -39,33 +33,58 @@ export function CreateProjectDialog({ companyId, open, onOpenChange }: CreatePro
 					<DialogTitle>プロジェクトを作成</DialogTitle>
 					<DialogDescription>新しいプロジェクトの情報を入力してください</DialogDescription>
 				</DialogHeader>
-				<div className='grid gap-4 py-4'>
-					<div className='grid gap-2'>
-						<Label htmlFor='name'>プロジェクト名</Label>
-						<Input
-							id='name'
-							value={projectName}
-							onChange={(e) => onProjectNameChange(e.target.value)}
-							placeholder='プロジェクト名を入力'
-						/>
+				<form
+					onSubmit={(e) => {
+						e.preventDefault();
+						e.stopPropagation();
+						void form.handleSubmit();
+					}}
+				>
+					<div className='grid gap-4 py-4'>
+						<form.Field name='name'>
+							{(field) => (
+								<div className='grid gap-2'>
+									<Label htmlFor='name'>プロジェクト名</Label>
+									<Input
+										id='name'
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										onBlur={field.handleBlur}
+										placeholder='プロジェクト名を入力'
+										disabled={form.state.isSubmitting}
+									/>
+									{field.state.meta.errors.length > 0 && (
+										<p className='text-sm text-red-400'>{String(field.state.meta.errors[0])}</p>
+									)}
+								</div>
+							)}
+						</form.Field>
+						<form.Field name='description'>
+							{(field) => (
+								<div className='grid gap-2'>
+									<Label htmlFor='description'>説明</Label>
+									<Textarea
+										id='description'
+										value={field.state.value}
+										onChange={(e) => field.handleChange(e.target.value)}
+										onBlur={field.handleBlur}
+										placeholder='プロジェクトの説明を入力'
+										rows={4}
+										disabled={form.state.isSubmitting}
+									/>
+								</div>
+							)}
+						</form.Field>
 					</div>
-					<div className='grid gap-2'>
-						<Label htmlFor='description'>説明</Label>
-						<Textarea
-							id='description'
-							value={projectDescription}
-							onChange={(e) => onProjectDescriptionChange(e.target.value)}
-							placeholder='プロジェクトの説明を入力'
-							rows={4}
-						/>
-					</div>
-				</div>
-				<DialogFooter>
-					<Button variant='outline' onClick={() => onOpenChange(false)}>
-						キャンセル
-					</Button>
-					<Button onClick={onSubmit}>作成</Button>
-				</DialogFooter>
+					<DialogFooter>
+						<Button variant='outline' type='button' onClick={() => onOpenChange(false)}>
+							キャンセル
+						</Button>
+						<Button type='submit' disabled={form.state.isSubmitting}>
+							{form.state.isSubmitting ? "作成中..." : "作成"}
+						</Button>
+					</DialogFooter>
+				</form>
 			</DialogContent>
 		</Dialog>
 	);
