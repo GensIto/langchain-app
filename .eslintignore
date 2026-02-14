@@ -1,0 +1,8 @@
+node_modules
+dist
+.wrangler
+.vinxi
+.output
+build
+*.gen.ts
+src/components/ui/**

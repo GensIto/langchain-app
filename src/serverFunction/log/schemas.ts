@@ -1,42 +1,42 @@
 import z from "zod";
 
 export const getLogsSchema = z.object({
-  projectId: z.string(),
+	projectId: z.string(),
 });
 
 export const getLogSchema = z.object({
-  id: z.string(),
+	id: z.string(),
 });
 
 export const createLogSchema = z.object({
-  projectId: z.string(),
-  content: z.string().min(1),
-  tagIds: z.array(z.string()).optional(),
+	projectId: z.string(),
+	content: z.string().min(1),
+	tagIds: z.array(z.string()).optional(),
 });
 
 export const updateLogSchema = z.object({
-  id: z.string(),
-  content: z.string().min(1),
-  tagIds: z.array(z.string()).optional(),
+	id: z.string(),
+	content: z.string().min(1),
+	tagIds: z.array(z.string()).optional(),
 });
 
 export const deleteLogSchema = z.object({
-  id: z.string(),
+	id: z.string(),
 });
 
 export const getTagsSchema = z.object({});
 
 export const createTagSchema = z.object({
-  name: z.string().min(1).max(50),
+	name: z.string().min(1).max(50),
 });
 
 export const updateTagSchema = z.object({
-  id: z.string(),
-  name: z.string().min(1).max(50),
+	id: z.string(),
+	name: z.string().min(1).max(50),
 });
 
 export const deleteTagSchema = z.object({
-  id: z.string(),
+	id: z.string(),
 });
 
 export type GetLogsInput = z.infer<typeof getLogsSchema>;
