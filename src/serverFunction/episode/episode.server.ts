@@ -69,13 +69,13 @@ export async function generateEpisode(data: GenerateEpisodeInput, session: Requi
 
 	// ChatCloudflareWorkersAI (LangChain) は bindTools() 未実装のため withStructuredOutput() が使えない
 	// https://docs.langchain.com/oss/javascript/integrations/chat/cloudflare_workersai
-	const response = await env.AI.run("@cf/meta/llama-3-8b-instruct", {
+	const response = await env.AI.run("@cf/deepseek-ai/deepseek-r1-distill-qwen-32b", {
 		messages: [
 			{
 				role: "system",
 				content: `あなたは、ログからSTAR形式のエピソードを生成するアシスタントです。
 ユーザーが提供するログ内容を分析し、STAR形式でエピソードを生成してください。
-すべての出力は必ず日本語で記述してください。`,
+すべてのフィールドの値は必ず日本語で記述してください。英語は使わないでください。`,
 			},
 			{
 				role: "user",
@@ -86,8 +86,15 @@ export async function generateEpisode(data: GenerateEpisodeInput, session: Requi
 			type: "json_schema",
 			json_schema: {
 				type: "object",
-				properties: generateStarResponseSchema.shape,
-				required: Object.keys(generateStarResponseSchema.shape),
+				properties: {
+					title: { type: "string", description: "エピソードのタイトル（日本語）" },
+					impactLevel: { type: "string", enum: ["low", "medium", "high"], description: "影響度" },
+					situation: { type: "string", description: "状況の説明（日本語）" },
+					task: { type: "string", description: "課題・目標の説明（日本語）" },
+					action: { type: "string", description: "取った行動の説明（日本語）" },
+					result: { type: "string", description: "結果・成果の説明（日本語）" },
+				},
+				required: ["title", "impactLevel", "situation", "task", "action", "result"],
 			},
 		},
 	});
@@ -190,10 +197,7 @@ export async function updateExistingEpisode(data: UpdateEpisodeInput, session: R
 	let checkedTags: { id: string; name: string }[] = [];
 	if (data.tagIds) {
 		// 既存のタグ関連を削除
-		await getDb()
-			.delete(episodeTags)
-			.where(eq(episodeTags.episodeId, episode.id))
-			.run();
+		await getDb().delete(episodeTags).where(eq(episodeTags.episodeId, episode.id)).run();
 
 		if (data.tagIds.length > 0) {
 			// 新しいタグの存在・所有権を検証
