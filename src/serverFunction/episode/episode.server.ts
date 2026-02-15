@@ -1,6 +1,7 @@
 import { env } from "cloudflare:workers";
 
 import { CloudflareVectorizeStore, CloudflareWorkersAIEmbeddings } from "@langchain/cloudflare";
+import { getLogger } from "@logtape/logtape";
 import { and, eq, inArray } from "drizzle-orm";
 
 import { getDb } from "@/db";
@@ -18,7 +19,11 @@ import {
 	type UpdateEpisodeInput,
 } from "./schemas";
 
+const logger = getLogger(["app", "episode"]);
+
 export async function getAllEpisodes(session: RequiredSession) {
+	logger.info("Fetching all episodes for user {userId}", { userId: session.user.id });
+
 	const result = await getDb().query.episodes.findMany({
 		where: eq(episodes.userId, session.user.id),
 		with: {
@@ -28,6 +33,8 @@ export async function getAllEpisodes(session: RequiredSession) {
 		},
 	});
 
+	logger.info("Fetched {count} episodes", { count: result.length });
+
 	return result.map(({ episodeTags, ...episode }) => ({
 		...episode,
 		tags: episodeTags.map((et) => ({ id: et.tag.id, name: et.tag.name })),
@@ -35,6 +42,8 @@ export async function getAllEpisodes(session: RequiredSession) {
 }
 
 export async function getEpisodeById(data: GetEpisodeInput, session: RequiredSession) {
+	logger.info("Fetching episode {episodeId}", { episodeId: data.id, userId: session.user.id });
+
 	const result = await getDb().query.episodes.findFirst({
 		where: and(eq(episodes.id, data.id), eq(episodes.userId, session.user.id)),
 		with: {
@@ -45,6 +54,7 @@ export async function getEpisodeById(data: GetEpisodeInput, session: RequiredSes
 	});
 
 	if (!result) {
+		logger.warn("Episode not found: {episodeId}", { episodeId: data.id });
 		throw new Error("Episode not found");
 	}
 
@@ -57,6 +67,11 @@ export async function getEpisodeById(data: GetEpisodeInput, session: RequiredSes
 }
 
 export async function generateEpisode(data: GenerateEpisodeInput, session: RequiredSession) {
+	logger.info("Generating episode from log {logId}", {
+		logId: data.logId,
+		userId: session.user.id,
+	});
+
 	const log = await getDb()
 		.select()
 		.from(logs)
@@ -64,6 +79,7 @@ export async function generateEpisode(data: GenerateEpisodeInput, session: Requi
 		.get();
 
 	if (!log) {
+		logger.warn("Log not found for episode generation: {logId}", { logId: data.logId });
 		throw new Error("Log not found");
 	}
 
@@ -102,13 +118,20 @@ export async function generateEpisode(data: GenerateEpisodeInput, session: Requi
 	const parsedResult = generateStarResponseSchema.safeParse(response.response);
 
 	if (!parsedResult.success) {
+		logger.error("Failed to parse AI response for log {logId}: {error}", {
+			logId: data.logId,
+			error: parsedResult.error.message,
+		});
 		throw new Error("Failed to generate episode");
 	}
 
+	logger.info("Episode generated from log {logId}", { logId: data.logId });
 	return parsedResult.data;
 }
 
 export async function createEpisode(data: CreateEpisodeInput, session: RequiredSession) {
+	logger.info("Creating episode for log {logId}", { logId: data.logId, userId: session.user.id });
+
 	const log = await getDb()
 		.select()
 		.from(logs)
@@ -116,6 +139,7 @@ export async function createEpisode(data: CreateEpisodeInput, session: RequiredS
 		.get();
 
 	if (!log) {
+		logger.warn("Log not found: {logId}", { logId: data.logId });
 		throw new Error("Log not found");
 	}
 
@@ -127,48 +151,60 @@ export async function createEpisode(data: CreateEpisodeInput, session: RequiredS
 			.where(and(eq(tags.userId, session.user.id), inArray(tags.id, data.tagIds)))
 			.all();
 		if (tagsResult.length !== data.tagIds.length) {
+			logger.warn("Some tags not found for episode creation", { tagIds: data.tagIds });
 			throw new Error("Tags not found");
 		}
 		checkedTags = tagsResult;
 	}
 
-	const episode = await getDb()
-		.insert(episodes)
-		.values({
-			id: crypto.randomUUID(),
-			userId: session.user.id,
-			logId: log.id,
-			title: data.title,
-			impactLevel: data.impactLevel,
-			situation: data.situation,
-			task: data.task,
-			action: data.action,
-			result: data.result,
-			createdAt: new Date(),
-			updatedAt: new Date(),
-		})
-		.returning()
-		.get();
+	const episodeId = crypto.randomUUID();
+	const now = new Date();
 
-	if (data.tagIds && data.tagIds.length > 0) {
-		await getDb()
-			.insert(episodeTags)
-			.values(
-				data.tagIds.map((tagId) => ({
-					id: crypto.randomUUID(),
-					episodeId: episode.id,
-					tagId,
-					createdAt: new Date(),
-				})),
-			)
-			.run();
-	}
-	await env.EPISODE_VECTORIZE_QUEUE.send({ episodeId: episode.id });
+	const db = getDb();
+	const batchQueries = [
+		db
+			.insert(episodes)
+			.values({
+				id: episodeId,
+				userId: session.user.id,
+				logId: log.id,
+				title: data.title,
+				impactLevel: data.impactLevel,
+				situation: data.situation,
+				task: data.task,
+				action: data.action,
+				result: data.result,
+				createdAt: now,
+				updatedAt: now,
+			})
+			.returning(),
+		...(data.tagIds && data.tagIds.length > 0
+			? [
+					db.insert(episodeTags).values(
+						data.tagIds.map((tagId) => ({
+							id: crypto.randomUUID(),
+							episodeId,
+							tagId,
+							createdAt: now,
+						})),
+					),
+				]
+			: []),
+	] as const;
+
+	const result = await db.batch(batchQueries);
+	const episode = result[0][0];
+
+	await env.EPISODE_VECTORIZE_QUEUE.send({ episodeId });
+
+	logger.info("Episode created: {episodeId}", { episodeId });
 
 	return { ...episode, tags: checkedTags };
 }
 
 export async function updateExistingEpisode(data: UpdateEpisodeInput, session: RequiredSession) {
+	logger.info("Updating episode {episodeId}", { episodeId: data.id, userId: session.user.id });
+
 	const existing = await getDb()
 		.select()
 		.from(episodes)
@@ -176,9 +212,67 @@ export async function updateExistingEpisode(data: UpdateEpisodeInput, session: R
 		.get();
 
 	if (!existing) {
+		logger.warn("Episode not found for update: {episodeId}", { episodeId: data.id });
 		throw new Error("Episode not found");
 	}
 
+	let checkedTags: { id: string; name: string }[] = [];
+
+	if (data.tagIds) {
+		if (data.tagIds.length > 0) {
+			const tagsResult = await getDb()
+				.select({ id: tags.id, name: tags.name })
+				.from(tags)
+				.where(and(eq(tags.userId, session.user.id), inArray(tags.id, data.tagIds)))
+				.all();
+			if (tagsResult.length !== data.tagIds.length) {
+				logger.warn("Some tags not found for episode update", { tagIds: data.tagIds });
+				throw new Error("Tags not found");
+			}
+			checkedTags = tagsResult;
+		}
+
+		const db = getDb();
+		const batchQueries = [
+			db
+				.update(episodes)
+				.set({
+					title: data.title,
+					impactLevel: data.impactLevel,
+					situation: data.situation,
+					task: data.task,
+					action: data.action,
+					result: data.result,
+					updatedAt: new Date(),
+				})
+				.where(eq(episodes.id, data.id))
+				.returning(),
+			db.delete(episodeTags).where(eq(episodeTags.episodeId, data.id)),
+			...(data.tagIds.length > 0
+				? [
+						db.insert(episodeTags).values(
+							data.tagIds.map((tagId) => ({
+								id: crypto.randomUUID(),
+								episodeId: data.id,
+								tagId,
+								createdAt: new Date(),
+							})),
+						),
+					]
+				: []),
+		] as const;
+
+		const result = await db.batch(batchQueries);
+		const episode = result[0][0];
+
+		await env.EPISODE_VECTORIZE_QUEUE.send({ episodeId: data.id });
+
+		logger.info("Episode updated with tags: {episodeId}", { episodeId: data.id });
+
+		return { ...episode, tags: checkedTags };
+	}
+
+	// tagIds が渡されなかった場合はタグ操作なし
 	const episode = await getDb()
 		.update(episodes)
 		.set({
@@ -194,52 +288,23 @@ export async function updateExistingEpisode(data: UpdateEpisodeInput, session: R
 		.returning()
 		.get();
 
-	let checkedTags: { id: string; name: string }[] = [];
-	if (data.tagIds) {
-		// 既存のタグ関連を削除
-		await getDb().delete(episodeTags).where(eq(episodeTags.episodeId, episode.id)).run();
+	checkedTags = await getDb()
+		.select({ id: tags.id, name: tags.name })
+		.from(episodeTags)
+		.innerJoin(tags, eq(episodeTags.tagId, tags.id))
+		.where(eq(episodeTags.episodeId, episode.id))
+		.all();
 
-		if (data.tagIds.length > 0) {
-			// 新しいタグの存在・所有権を検証
-			const tagsResult = await getDb()
-				.select({ id: tags.id, name: tags.name })
-				.from(tags)
-				.where(and(eq(tags.userId, session.user.id), inArray(tags.id, data.tagIds)))
-				.all();
-			if (tagsResult.length !== data.tagIds.length) {
-				throw new Error("Tags not found");
-			}
-			checkedTags = tagsResult;
+	await env.EPISODE_VECTORIZE_QUEUE.send({ episodeId: data.id });
 
-			// 新しいタグ関連を挿入
-			await getDb()
-				.insert(episodeTags)
-				.values(
-					data.tagIds.map((tagId) => ({
-						id: crypto.randomUUID(),
-						episodeId: episode.id,
-						tagId,
-						createdAt: new Date(),
-					})),
-				)
-				.run();
-		}
-	} else {
-		// tagIds が渡されなかった場合は既存のタグを返す
-		checkedTags = await getDb()
-			.select({ id: tags.id, name: tags.name })
-			.from(episodeTags)
-			.innerJoin(tags, eq(episodeTags.tagId, tags.id))
-			.where(eq(episodeTags.episodeId, episode.id))
-			.all();
-	}
-
-	await env.EPISODE_VECTORIZE_QUEUE.send({ episodeId: episode.id });
+	logger.info("Episode updated: {episodeId}", { episodeId: data.id });
 
 	return { ...episode, tags: checkedTags };
 }
 
 export async function removeEpisode(data: DeleteEpisodeInput, session: RequiredSession) {
+	logger.info("Removing episode {episodeId}", { episodeId: data.id, userId: session.user.id });
+
 	const existing = await getDb()
 		.select()
 		.from(episodes)
@@ -247,6 +312,7 @@ export async function removeEpisode(data: DeleteEpisodeInput, session: RequiredS
 		.get();
 
 	if (!existing) {
+		logger.warn("Episode not found for removal: {episodeId}", { episodeId: data.id });
 		throw new Error("Episode not found");
 	}
 
@@ -264,4 +330,6 @@ export async function removeEpisode(data: DeleteEpisodeInput, session: RequiredS
 		index: env.VECTORIZE_INDEX,
 	});
 	await vectorStore.delete({ ids: [data.id] });
+
+	logger.info("Episode removed: {episodeId}", { episodeId: data.id });
 }

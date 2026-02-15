@@ -1,3 +1,4 @@
+import { getLogger } from "@logtape/logtape";
 import { and, eq } from "drizzle-orm";
 
 import { getDb } from "@/db";
@@ -12,6 +13,8 @@ import type {
 	GetProjectsInput,
 	UpdateProjectInput,
 } from "./schemas";
+
+const logger = getLogger(["app", "project"]);
 
 async function verifyCompanyOwnership(companyId: string, userId: string) {
 	const company = await getDb()
@@ -28,6 +31,11 @@ async function verifyCompanyOwnership(companyId: string, userId: string) {
 }
 
 export async function getAllProjects(data: GetProjectsInput, session: RequiredSession) {
+	logger.info("Fetching all projects for company {companyId}", {
+		companyId: data.companyId,
+		userId: session.user.id,
+	});
+
 	// Verify company ownership
 	await verifyCompanyOwnership(data.companyId, session.user.id);
 
@@ -37,10 +45,14 @@ export async function getAllProjects(data: GetProjectsInput, session: RequiredSe
 		.where(and(eq(projects.companyId, data.companyId), eq(projects.userId, session.user.id)))
 		.all();
 
+	logger.info("Fetched {count} projects", { count: result.length });
+
 	return result;
 }
 
 export async function getProjectById(data: GetProjectInput, session: RequiredSession) {
+	logger.info("Fetching project {projectId}", { projectId: data.id, userId: session.user.id });
+
 	const project = await getDb()
 		.select()
 		.from(projects)
@@ -48,6 +60,7 @@ export async function getProjectById(data: GetProjectInput, session: RequiredSes
 		.get();
 
 	if (!project) {
+		logger.warn("Project not found: {projectId}", { projectId: data.id });
 		throw new Error("Project not found");
 	}
 
@@ -55,6 +68,12 @@ export async function getProjectById(data: GetProjectInput, session: RequiredSes
 }
 
 export async function createNewProject(data: CreateProjectInput, session: RequiredSession) {
+	logger.info("Creating project {name} for company {companyId}", {
+		name: data.name,
+		companyId: data.companyId,
+		userId: session.user.id,
+	});
+
 	// Verify company ownership
 	await verifyCompanyOwnership(data.companyId, session.user.id);
 
@@ -72,10 +91,14 @@ export async function createNewProject(data: CreateProjectInput, session: Requir
 		.returning()
 		.get();
 
+	logger.info("Project created: {projectId}", { projectId: project.id });
+
 	return project;
 }
 
 export async function updateExistingProject(data: UpdateProjectInput, session: RequiredSession) {
+	logger.info("Updating project {projectId}", { projectId: data.id, userId: session.user.id });
+
 	const project = await getDb()
 		.update(projects)
 		.set({
@@ -88,13 +111,18 @@ export async function updateExistingProject(data: UpdateProjectInput, session: R
 		.get();
 
 	if (!project) {
+		logger.warn("Project not found for update: {projectId}", { projectId: data.id });
 		throw new Error("Project not found");
 	}
+
+	logger.info("Project updated: {projectId}", { projectId: project.id });
 
 	return project;
 }
 
 export async function removeProject(data: DeleteProjectInput, session: RequiredSession) {
+	logger.info("Removing project {projectId}", { projectId: data.id, userId: session.user.id });
+
 	const result = await getDb()
 		.delete(projects)
 		.where(and(eq(projects.id, data.id), eq(projects.userId, session.user.id)))
@@ -102,8 +130,11 @@ export async function removeProject(data: DeleteProjectInput, session: RequiredS
 		.get();
 
 	if (!result) {
+		logger.warn("Project not found for removal: {projectId}", { projectId: data.id });
 		throw new Error("Project not found");
 	}
+
+	logger.info("Project removed: {projectId}", { projectId: data.id });
 
 	return { success: true };
 }
