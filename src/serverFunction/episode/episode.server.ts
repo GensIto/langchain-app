@@ -1,7 +1,6 @@
 import { env } from "cloudflare:workers";
 
 import { CloudflareVectorizeStore, CloudflareWorkersAIEmbeddings } from "@langchain/cloudflare";
-import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { and, eq, inArray } from "drizzle-orm";
 
 import { getDb } from "@/db";
@@ -9,7 +8,6 @@ import { episodes } from "@/db/episodes";
 import { logs } from "@/db/logs";
 import { episodeTags, tags } from "@/db/tags";
 import type { RequiredSession } from "@/lib/auth";
-import { createChatLLM } from "@/serverFunction/utils/createLLM";
 
 import {
 	generateStarResponseSchema,
@@ -69,32 +67,32 @@ export async function generateEpisode(data: GenerateEpisodeInput, session: Requi
 		throw new Error("Log not found");
 	}
 
-	const llm = createChatLLM("@cf/meta/llama-3.2-1b-instruct");
-	const structuredLlm = llm.withStructuredOutput(generateStarResponseSchema);
-
-	const prompt = ChatPromptTemplate.fromMessages([
-		[
-			"system",
-			`あなたは、ログからSTAR形式のエピソードを生成するアシスタントです。
-ユーザーが提供するログ内容を分析し、以下のSTAR形式でエピソードを生成してください:
-- title: エピソードのタイトル
-- impactLevel: プロジェクトに与えた影響レベル (low, medium, high) のいずれか
-- situation: エピソードの状況
-- task: エピソードのタスク
-- action: エピソードのアクション
-- result: エピソードの結果`,
+	// ChatCloudflareWorkersAI (LangChain) は bindTools() 未実装のため withStructuredOutput() が使えない
+	// https://docs.langchain.com/oss/javascript/integrations/chat/cloudflare_workersai
+	const response = await env.AI.run("@cf/meta/llama-3-8b-instruct", {
+		messages: [
+			{
+				role: "system",
+				content: `あなたは、ログからSTAR形式のエピソードを生成するアシスタントです。
+ユーザーが提供するログ内容を分析し、STAR形式でエピソードを生成してください。
+すべての出力は必ず日本語で記述してください。`,
+			},
+			{
+				role: "user",
+				content: log.content,
+			},
 		],
-		["human", `${log.content}`],
-	]);
+		response_format: {
+			type: "json_schema",
+			json_schema: {
+				type: "object",
+				properties: generateStarResponseSchema.shape,
+				required: Object.keys(generateStarResponseSchema.shape),
+			},
+		},
+	});
 
-	const chain = prompt.pipe(structuredLlm);
-	const result = await chain.invoke({ logContent: log.content });
-
-	if (!result) {
-		throw new Error("Failed to generate episode");
-	}
-
-	const parsedResult = generateStarResponseSchema.safeParse(result);
+	const parsedResult = generateStarResponseSchema.safeParse(response.response);
 
 	if (!parsedResult.success) {
 		throw new Error("Failed to generate episode");
@@ -189,16 +187,52 @@ export async function updateExistingEpisode(data: UpdateEpisodeInput, session: R
 		.returning()
 		.get();
 
-	const episodeTagsResult = await getDb()
-		.select({ id: tags.id, name: tags.name })
-		.from(episodeTags)
-		.innerJoin(tags, eq(episodeTags.tagId, tags.id))
-		.where(eq(episodeTags.episodeId, episode.id))
-		.all();
+	let checkedTags: { id: string; name: string }[] = [];
+	if (data.tagIds) {
+		// 既存のタグ関連を削除
+		await getDb()
+			.delete(episodeTags)
+			.where(eq(episodeTags.episodeId, episode.id))
+			.run();
+
+		if (data.tagIds.length > 0) {
+			// 新しいタグの存在・所有権を検証
+			const tagsResult = await getDb()
+				.select({ id: tags.id, name: tags.name })
+				.from(tags)
+				.where(and(eq(tags.userId, session.user.id), inArray(tags.id, data.tagIds)))
+				.all();
+			if (tagsResult.length !== data.tagIds.length) {
+				throw new Error("Tags not found");
+			}
+			checkedTags = tagsResult;
+
+			// 新しいタグ関連を挿入
+			await getDb()
+				.insert(episodeTags)
+				.values(
+					data.tagIds.map((tagId) => ({
+						id: crypto.randomUUID(),
+						episodeId: episode.id,
+						tagId,
+						createdAt: new Date(),
+					})),
+				)
+				.run();
+		}
+	} else {
+		// tagIds が渡されなかった場合は既存のタグを返す
+		checkedTags = await getDb()
+			.select({ id: tags.id, name: tags.name })
+			.from(episodeTags)
+			.innerJoin(tags, eq(episodeTags.tagId, tags.id))
+			.where(eq(episodeTags.episodeId, episode.id))
+			.all();
+	}
 
 	await env.EPISODE_VECTORIZE_QUEUE.send({ episodeId: episode.id });
 
-	return { ...episode, tags: episodeTagsResult };
+	return { ...episode, tags: checkedTags };
 }
 
 export async function removeEpisode(data: DeleteEpisodeInput, session: RequiredSession) {

@@ -3,6 +3,7 @@ import { useRouter } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { z } from "zod";
 
+import { createTag } from "@/serverFunction/log/log.functions";
 import { updateEpisode } from "@/serverFunction/episode/episode.functions";
 
 import type { EpisodeWithTags } from "../../types";
@@ -18,6 +19,7 @@ export function useEditEpisode(episode: EpisodeWithTags | null, onClose: () => v
 			task: episode?.task ?? "",
 			action: episode?.action ?? "",
 			result: episode?.result ?? "",
+			tagIds: episode?.tags.map((t) => t.id) ?? ([] as string[]),
 		},
 		validators: {
 			onSubmit: z.object({
@@ -27,6 +29,7 @@ export function useEditEpisode(episode: EpisodeWithTags | null, onClose: () => v
 				task: z.string().min(1),
 				action: z.string().min(1),
 				result: z.string().min(1),
+				tagIds: z.array(z.string()),
 			}),
 		},
 		onSubmit: async ({ value }) => {
@@ -45,5 +48,16 @@ export function useEditEpisode(episode: EpisodeWithTags | null, onClose: () => v
 		},
 	});
 
-	return { form };
+	const handleCreateTag = async (name: string) => {
+		try {
+			await createTag({ data: { name } });
+			toast.success("タグを作成しました");
+			void router.invalidate();
+		} catch (error) {
+			toast.error("タグの作成に失敗しました");
+			console.error(error);
+		}
+	};
+
+	return { form, handleCreateTag };
 }

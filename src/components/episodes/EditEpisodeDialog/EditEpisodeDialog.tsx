@@ -18,17 +18,21 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
+import { TagSelector } from "@/components/logs/TagSelector/TagSelector";
+
 import { useEditEpisode } from "./hooks/useEditEpisode";
 
+import type { Tag } from "@/components/logs/types";
 import type { EpisodeWithTags } from "../types";
 
 type EditEpisodeDialogProps = {
 	episode: EpisodeWithTags | null;
+	tags: Tag[];
 	onClose: () => void;
 };
 
-export function EditEpisodeDialog({ episode, onClose }: EditEpisodeDialogProps) {
-	const { form } = useEditEpisode(episode, onClose);
+export function EditEpisodeDialog({ episode, tags, onClose }: EditEpisodeDialogProps) {
+	const { form, handleCreateTag } = useEditEpisode(episode, onClose);
 
 	return (
 		<Dialog open={episode !== null} onOpenChange={(open) => !open && onClose()}>
@@ -164,6 +168,27 @@ export function EditEpisodeDialog({ episode, onClose }: EditEpisodeDialogProps) 
 											{String(field.state.meta.errors[0])}
 										</p>
 									)}
+								</div>
+							)}
+						</form.Field>
+
+						<form.Field name='tagIds'>
+							{(field) => (
+								<div className='grid gap-2'>
+									<Label>タグ</Label>
+									<TagSelector
+										tags={tags}
+										selectedTagIds={field.state.value}
+										onToggle={(tagId) => {
+											const current = field.state.value;
+											field.handleChange(
+												current.includes(tagId)
+													? current.filter((id) => id !== tagId)
+													: [...current, tagId],
+											);
+										}}
+										onCreateTag={handleCreateTag}
+									/>
 								</div>
 							)}
 						</form.Field>

@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { deleteEpisode, getEpisode } from "@/serverFunction/episode/episode.functions";
+import { getTags } from "@/serverFunction/log/log.functions";
 
 const impactLevelVariant = {
 	high: "destructive",
@@ -24,13 +25,16 @@ const impactLevelLabel = {
 export const Route = createFileRoute("/_authenticated/episodes/$episodeId")({
 	component: EpisodeDetail,
 	loader: async ({ params }) => {
-		const episode = await getEpisode({ data: { id: params.episodeId } });
-		return { episode };
+		const [episode, allTags] = await Promise.all([
+			getEpisode({ data: { id: params.episodeId } }),
+			getTags({ data: {} }),
+		]);
+		return { episode, allTags };
 	},
 });
 
 function EpisodeDetail() {
-	const { episode } = Route.useLoaderData();
+	const { episode, allTags } = Route.useLoaderData();
 	const navigate = useNavigate();
 	const [editingEpisode, setEditingEpisode] = useState<EpisodeWithTags | null>(null);
 
@@ -119,6 +123,7 @@ function EpisodeDetail() {
 				<EditEpisodeDialog
 					key={editingEpisode?.id}
 					episode={editingEpisode}
+					tags={allTags}
 					onClose={() => setEditingEpisode(null)}
 				/>
 			</div>

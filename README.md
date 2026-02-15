@@ -290,3 +290,6 @@ https://github.com/TanStack/router/issues/2728
 
 https://docs.langchain.com/oss/javascript/integrations/text_embedding/cloudflare_ai
 https://docs.langchain.com/oss/javascript/integrations/vectorstores/cloudflare_vectorize
+
+所詮無料なので使える機能少ない。。
+https://docs.langchain.com/oss/javascript/integrations/chat/cloudflare_workersai

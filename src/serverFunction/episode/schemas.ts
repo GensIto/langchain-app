@@ -36,6 +36,7 @@ export const updateEpisodeSchema = z.object({
 	task: z.string().min(1),
 	action: z.string().min(1),
 	result: z.string().min(1),
+	tagIds: z.array(z.string()).optional(),
 });
 
 export const deleteEpisodeSchema = z.object({
