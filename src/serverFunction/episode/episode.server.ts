@@ -1,5 +1,7 @@
 import { env } from "cloudflare:workers";
 
+import { CloudflareVectorizeStore, CloudflareWorkersAIEmbeddings } from "@langchain/cloudflare";
+import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { and, eq, inArray } from "drizzle-orm";
 
 import { getDb } from "@/db";
@@ -7,6 +9,7 @@ import { episodes } from "@/db/episodes";
 import { logs } from "@/db/logs";
 import { episodeTags, tags } from "@/db/tags";
 import type { RequiredSession } from "@/lib/auth";
+import { createChatLLM } from "@/serverFunction/utils/createLLM";
 
 import {
 	generateStarResponseSchema,
@@ -56,7 +59,6 @@ export async function getEpisodeById(data: GetEpisodeInput, session: RequiredSes
 }
 
 export async function generateEpisode(data: GenerateEpisodeInput, session: RequiredSession) {
-	// TODO: ログからSTAR形式のエピソードをAI生成
 	const log = await getDb()
 		.select()
 		.from(logs)
@@ -67,55 +69,38 @@ export async function generateEpisode(data: GenerateEpisodeInput, session: Requi
 		throw new Error("Log not found");
 	}
 
-	//TODO 悪意のあるプロンプトで影響受けちゃう&langchainで実装する
-	const res = await env.AI.run("@cf/meta/llama-2-7b-chat-int8", {
-		content: log.content,
-		prompt: `
-		あなたは、ログからSTAR形式のエピソードを生成する親切なアシスタントです。
-		このログは、ユーザーとアシスタント間の会話です。
-		ユーザーはログからSTAR形式のエピソード作成を依頼しています。
-		アシスタントはログ内容からSTAR形式のエピソードを生成します。
-		生成するエピソードは以下の形式で出力してください:
-		- title: エピソードのタイトル
-		- impactLevel: エピソードのプロジェクトに与えた影響レベル (low, medium, high) のいずれか
-		- situation: エピソードの状況
-		- task: エピソードのタスク
-		- action: エピソードのアクション
-		- result: エピソードの結果
+	const llm = createChatLLM("@cf/meta/llama-3.2-1b-instruct");
+	const structuredLlm = llm.withStructuredOutput(generateStarResponseSchema);
 
-		ログ内容:
-		${log.content}
-		`,
-		response_format: {
-			type: "json_schema",
-			json_schema: {
-				name: "STARFormatEpisode",
-				schema: {
-					type: "object",
-					properties: {
-						title: { type: "string" },
-						impactLevel: { type: "string" },
-						situation: { type: "string" },
-						task: { type: "string" },
-						action: { type: "string" },
-						result: { type: "string" },
-					},
-				},
-			},
-		},
-	});
+	const prompt = ChatPromptTemplate.fromMessages([
+		[
+			"system",
+			`あなたは、ログからSTAR形式のエピソードを生成するアシスタントです。
+ユーザーが提供するログ内容を分析し、以下のSTAR形式でエピソードを生成してください:
+- title: エピソードのタイトル
+- impactLevel: プロジェクトに与えた影響レベル (low, medium, high) のいずれか
+- situation: エピソードの状況
+- task: エピソードのタスク
+- action: エピソードのアクション
+- result: エピソードの結果`,
+		],
+		["human", `${log.content}`],
+	]);
 
-	if (!res) {
+	const chain = prompt.pipe(structuredLlm);
+	const result = await chain.invoke({ logContent: log.content });
+
+	if (!result) {
 		throw new Error("Failed to generate episode");
 	}
 
-	const response = generateStarResponseSchema.safeParse(res.response);
+	const parsedResult = generateStarResponseSchema.safeParse(result);
 
-	if (!response.success) {
+	if (!parsedResult.success) {
 		throw new Error("Failed to generate episode");
 	}
 
-	return response.data;
+	return parsedResult.data;
 }
 
 export async function createEpisode(data: CreateEpisodeInput, session: RequiredSession) {
@@ -173,7 +158,7 @@ export async function createEpisode(data: CreateEpisodeInput, session: RequiredS
 			)
 			.run();
 	}
-	//TODO Qでchunk&ベクター化
+	await env.EPISODE_VECTORIZE_QUEUE.send({ episodeId: episode.id });
 
 	return { ...episode, tags: checkedTags };
 }
@@ -211,6 +196,8 @@ export async function updateExistingEpisode(data: UpdateEpisodeInput, session: R
 		.where(eq(episodeTags.episodeId, episode.id))
 		.all();
 
+	await env.EPISODE_VECTORIZE_QUEUE.send({ episodeId: episode.id });
+
 	return { ...episode, tags: episodeTagsResult };
 }
 
@@ -226,4 +213,17 @@ export async function removeEpisode(data: DeleteEpisodeInput, session: RequiredS
 	}
 
 	await getDb().delete(episodes).where(eq(episodes.id, data.id)).run();
+
+	// R2 + Vectorize からも削除
+	if (existing.docsPath) {
+		await env.EPISODE_DOCS_BUCKET.delete(existing.docsPath);
+	}
+	const embeddings = new CloudflareWorkersAIEmbeddings({
+		binding: env.AI,
+		model: "@cf/google/embeddinggemma-300m",
+	});
+	const vectorStore = new CloudflareVectorizeStore(embeddings, {
+		index: env.VECTORIZE_INDEX,
+	});
+	await vectorStore.delete({ ids: [data.id] });
 }

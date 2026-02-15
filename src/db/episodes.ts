@@ -19,6 +19,7 @@ export const episodes = sqliteTable(
 		task: text("task").notNull(),
 		action: text("action").notNull(),
 		result: text("result").notNull(),
+		docsPath: text("docsPath"),
 		createdAt: integer("createdAt", { mode: "timestamp" }).notNull(),
 		updatedAt: integer("updatedAt", { mode: "timestamp" }).notNull(),
 	},
