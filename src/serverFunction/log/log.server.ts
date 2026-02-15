@@ -1,8 +1,9 @@
 import { and, eq } from "drizzle-orm";
 
 import { getDb } from "@/db";
-import { logs, logTags, tags } from "@/db/logs";
+import { logs } from "@/db/logs";
 import { projects } from "@/db/projects";
+import { logTags, tags } from "@/db/tags";
 import type { RequiredSession } from "@/lib/auth";
 
 import type {
