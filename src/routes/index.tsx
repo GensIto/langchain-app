@@ -1,37 +1,14 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { createServerFn } from "@tanstack/react-start";
 import { useEffect } from "react";
 
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/lib/auth-client";
 
-// import { CloudflareWorkersAI } from "@langchain/cloudflare";
-// import { env } from "cloudflare:workers";
-
-const getCurrentServerTime = createServerFn({
-	method: "GET",
-}).handler(() => {
-	// const llm = new CloudflareWorkersAI({
-	//   model: "@cf/meta/llama-3.1-8b-instruct",
-	//   cloudflareAccountId: env.CLOUDFLARE_ACCOUNT_ID,
-	//   cloudflareApiToken: env.CLOUDFLARE_AI_TOKEN,
-	// });
-
-	// const inputText = "Cloudflare is an AI company that ";
-
-	// const response = await llm.invoke(inputText);
-	// return response;
-	return "Hello, world!";
-});
-
 export const Route = createFileRoute("/")({
 	component: App,
-	loader: async () => await getCurrentServerTime(),
 });
 
 function App() {
-	const response = Route.useLoaderData();
-
 	const navigate = useNavigate();
 	const { data: session } = useSession();
 
@@ -47,7 +24,6 @@ function App() {
 				<p className='text-2xl md:text-3xl text-gray-300 mb-4 font-light'>
 					The framework for next generation AI applications
 				</p>
-				<p className='text-2xl md:text-3xl text-gray-300 mb-4 font-light'>{response}</p>
 				<Link to='/signup'>
 					<Button>Sign up</Button>
 				</Link>

@@ -287,3 +287,6 @@ You can learn more about all of the offerings from TanStack in the [TanStack doc
 https://docs.langchain.com/oss/javascript/integrations/llms/cloudflare_workersai
 
 https://github.com/TanStack/router/issues/2728
+
+https://docs.langchain.com/oss/javascript/integrations/text_embedding/cloudflare_ai
+https://docs.langchain.com/oss/javascript/integrations/vectorstores/cloudflare_vectorize
