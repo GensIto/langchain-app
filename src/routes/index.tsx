@@ -24,9 +24,6 @@ function App() {
 				<p className='text-2xl md:text-3xl text-gray-300 mb-4 font-light'>
 					The framework for next generation AI applications
 				</p>
-				<Link to='/signup'>
-					<Button>Sign up</Button>
-				</Link>
 				<Link to='/signin'>
 					<Button>Sign in</Button>
 				</Link>
