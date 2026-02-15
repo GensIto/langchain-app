@@ -13,8 +13,10 @@ import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SigninRouteImport } from './routes/signin'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedEpisodesIndexRouteImport } from './routes/_authenticated/episodes/index'
 import { Route as AuthenticatedCompaniesIndexRouteImport } from './routes/_authenticated/companies/index'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as AuthenticatedEpisodesEpisodeIdRouteImport } from './routes/_authenticated/episodes/$episodeId'
 import { Route as AuthenticatedCompaniesCompanyIdProjectsRouteImport } from './routes/_authenticated/companies/$companyId.projects'
 import { Route as AuthenticatedProjectsProjectIdLogsIndexRouteImport } from './routes/_authenticated/projects/$projectId/logs/index'
 import { Route as AuthenticatedProjectsProjectIdLogsLogIdRouteImport } from './routes/_authenticated/projects/$projectId/logs/$logId'
@@ -38,6 +40,12 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedEpisodesIndexRoute =
+  AuthenticatedEpisodesIndexRouteImport.update({
+    id: '/episodes/',
+    path: '/episodes/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedCompaniesIndexRoute =
   AuthenticatedCompaniesIndexRouteImport.update({
     id: '/companies/',
@@ -49,6 +57,12 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedEpisodesEpisodeIdRoute =
+  AuthenticatedEpisodesEpisodeIdRouteImport.update({
+    id: '/episodes/$episodeId',
+    path: '/episodes/$episodeId',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedCompaniesCompanyIdProjectsRoute =
   AuthenticatedCompaniesCompanyIdProjectsRouteImport.update({
     id: '/companies/$companyId/projects',
@@ -72,8 +86,10 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
+  '/episodes/$episodeId': typeof AuthenticatedEpisodesEpisodeIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/companies/': typeof AuthenticatedCompaniesIndexRoute
+  '/episodes/': typeof AuthenticatedEpisodesIndexRoute
   '/companies/$companyId/projects': typeof AuthenticatedCompaniesCompanyIdProjectsRoute
   '/projects/$projectId/logs/$logId': typeof AuthenticatedProjectsProjectIdLogsLogIdRoute
   '/projects/$projectId/logs/': typeof AuthenticatedProjectsProjectIdLogsIndexRoute
@@ -82,8 +98,10 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
+  '/episodes/$episodeId': typeof AuthenticatedEpisodesEpisodeIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/companies': typeof AuthenticatedCompaniesIndexRoute
+  '/episodes': typeof AuthenticatedEpisodesIndexRoute
   '/companies/$companyId/projects': typeof AuthenticatedCompaniesCompanyIdProjectsRoute
   '/projects/$projectId/logs/$logId': typeof AuthenticatedProjectsProjectIdLogsLogIdRoute
   '/projects/$projectId/logs': typeof AuthenticatedProjectsProjectIdLogsIndexRoute
@@ -94,8 +112,10 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
+  '/_authenticated/episodes/$episodeId': typeof AuthenticatedEpisodesEpisodeIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/_authenticated/companies/': typeof AuthenticatedCompaniesIndexRoute
+  '/_authenticated/episodes/': typeof AuthenticatedEpisodesIndexRoute
   '/_authenticated/companies/$companyId/projects': typeof AuthenticatedCompaniesCompanyIdProjectsRoute
   '/_authenticated/projects/$projectId/logs/$logId': typeof AuthenticatedProjectsProjectIdLogsLogIdRoute
   '/_authenticated/projects/$projectId/logs/': typeof AuthenticatedProjectsProjectIdLogsIndexRoute
@@ -106,8 +126,10 @@ export interface FileRouteTypes {
     | '/'
     | '/signin'
     | '/signup'
+    | '/episodes/$episodeId'
     | '/api/auth/$'
     | '/companies/'
+    | '/episodes/'
     | '/companies/$companyId/projects'
     | '/projects/$projectId/logs/$logId'
     | '/projects/$projectId/logs/'
@@ -116,8 +138,10 @@ export interface FileRouteTypes {
     | '/'
     | '/signin'
     | '/signup'
+    | '/episodes/$episodeId'
     | '/api/auth/$'
     | '/companies'
+    | '/episodes'
     | '/companies/$companyId/projects'
     | '/projects/$projectId/logs/$logId'
     | '/projects/$projectId/logs'
@@ -127,8 +151,10 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/signin'
     | '/signup'
+    | '/_authenticated/episodes/$episodeId'
     | '/api/auth/$'
     | '/_authenticated/companies/'
+    | '/_authenticated/episodes/'
     | '/_authenticated/companies/$companyId/projects'
     | '/_authenticated/projects/$projectId/logs/$logId'
     | '/_authenticated/projects/$projectId/logs/'
@@ -172,6 +198,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/episodes/': {
+      id: '/_authenticated/episodes/'
+      path: '/episodes'
+      fullPath: '/episodes/'
+      preLoaderRoute: typeof AuthenticatedEpisodesIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/companies/': {
       id: '/_authenticated/companies/'
       path: '/companies'
@@ -185,6 +218,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/auth/$'
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/episodes/$episodeId': {
+      id: '/_authenticated/episodes/$episodeId'
+      path: '/episodes/$episodeId'
+      fullPath: '/episodes/$episodeId'
+      preLoaderRoute: typeof AuthenticatedEpisodesEpisodeIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/companies/$companyId/projects': {
       id: '/_authenticated/companies/$companyId/projects'
@@ -211,14 +251,18 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteChildren {
+  AuthenticatedEpisodesEpisodeIdRoute: typeof AuthenticatedEpisodesEpisodeIdRoute
   AuthenticatedCompaniesIndexRoute: typeof AuthenticatedCompaniesIndexRoute
+  AuthenticatedEpisodesIndexRoute: typeof AuthenticatedEpisodesIndexRoute
   AuthenticatedCompaniesCompanyIdProjectsRoute: typeof AuthenticatedCompaniesCompanyIdProjectsRoute
   AuthenticatedProjectsProjectIdLogsLogIdRoute: typeof AuthenticatedProjectsProjectIdLogsLogIdRoute
   AuthenticatedProjectsProjectIdLogsIndexRoute: typeof AuthenticatedProjectsProjectIdLogsIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedEpisodesEpisodeIdRoute: AuthenticatedEpisodesEpisodeIdRoute,
   AuthenticatedCompaniesIndexRoute: AuthenticatedCompaniesIndexRoute,
+  AuthenticatedEpisodesIndexRoute: AuthenticatedEpisodesIndexRoute,
   AuthenticatedCompaniesCompanyIdProjectsRoute:
     AuthenticatedCompaniesCompanyIdProjectsRoute,
   AuthenticatedProjectsProjectIdLogsLogIdRoute:

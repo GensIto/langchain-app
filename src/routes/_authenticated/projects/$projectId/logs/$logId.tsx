@@ -4,26 +4,31 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { toast } from "sonner";
 
+import { CreateEpisodeDialog } from "@/components/episodes/CreateEpisodeDialog/CreateEpisodeDialog";
 import { EditLogDialog } from "@/components/logs/EditLogDialog";
 import type { LogWithTags } from "@/components/logs/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { deleteLog, getLog } from "@/serverFunction/log/log.functions";
+import { deleteLog, getLog, getTags } from "@/serverFunction/log/log.functions";
 
 export const Route = createFileRoute("/_authenticated/projects/$projectId/logs/$logId")({
 	component: LogDetail,
 	loader: async ({ params }) => {
-		const log = await getLog({ data: { id: params.logId } });
-		return { log, tags: log.tags };
+		const [log, allTags] = await Promise.all([
+			getLog({ data: { id: params.logId } }),
+			getTags({ data: {} }),
+		]);
+		return { log, tags: log.tags, allTags };
 	},
 });
 
 function LogDetail() {
-	const { log, tags } = Route.useLoaderData();
+	const { log, tags, allTags } = Route.useLoaderData();
 	const { projectId } = Route.useParams();
 	const navigate = useNavigate();
 	const [editingLog, setEditingLog] = useState<LogWithTags | null>(null);
+	const [isCreateEpisodeOpen, setIsCreateEpisodeOpen] = useState(false);
 
 	const handleDelete = async () => {
 		if (!confirm("このログを削除しますか？")) return;
@@ -35,11 +40,6 @@ function LogDetail() {
 			toast.error("ログの削除に失敗しました");
 			console.error(error);
 		}
-	};
-
-	const handleCreateEpisode = () => {
-		// TODO: Implement episode creation
-		toast.info("エピソード作成機能は現在未実装です");
 	};
 
 	return (
@@ -67,7 +67,7 @@ function LogDetail() {
 								</CardDescription>
 							</div>
 							<div className='flex gap-2'>
-								<Button variant='outline' onClick={handleCreateEpisode}>
+								<Button variant='outline' onClick={() => setIsCreateEpisodeOpen(true)}>
 									エピソード作成
 								</Button>
 								<Button variant='outline' onClick={() => setEditingLog(log)}>
@@ -79,7 +79,7 @@ function LogDetail() {
 							</div>
 						</div>
 						<div className='flex flex-wrap gap-2'>
-							{log.tags.map((tag) => (
+							{log.tags.map((tag: { id: string; name: string }) => (
 								<Badge key={tag.id} variant='secondary'>
 									{tag.name}
 								</Badge>
@@ -92,6 +92,13 @@ function LogDetail() {
 						</div>
 					</CardContent>
 				</Card>
+
+				<CreateEpisodeDialog
+					logId={log.id}
+					tags={allTags}
+					open={isCreateEpisodeOpen}
+					onOpenChange={setIsCreateEpisodeOpen}
+				/>
 
 				<EditLogDialog
 					key={editingLog?.id}

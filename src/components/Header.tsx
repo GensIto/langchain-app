@@ -10,6 +10,9 @@ export default function Header() {
 				<Link to='/companies' className='hover:text-gray-300 transition-colors'>
 					会社・プロジェクト
 				</Link>
+				<Link to='/episodes' className='hover:text-gray-300 transition-colors'>
+					エピソード
+				</Link>
 			</nav>
 		</header>
 	);
