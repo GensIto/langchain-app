@@ -94,7 +94,6 @@ export async function getLogById(data: GetLogInput, session: RequiredSession) {
 }
 
 export async function createNewLog(data: CreateLogInput, session: RequiredSession) {
-	// Verify project ownership
 	await verifyProjectOwnership(data.projectId, session.user.id);
 
 	const log = await getDb()
@@ -110,7 +109,6 @@ export async function createNewLog(data: CreateLogInput, session: RequiredSessio
 		.returning()
 		.get();
 
-	// Add tags if provided
 	if (data.tagIds && data.tagIds.length > 0) {
 		await Promise.all(
 			data.tagIds.map((tagId) =>
