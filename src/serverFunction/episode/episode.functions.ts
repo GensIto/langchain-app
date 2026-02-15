@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { authMiddleware } from "@/lib/middleware";
 
 import {
+	createEpisode,
 	generateEpisode,
 	getAllEpisodes,
 	getEpisodeById,
@@ -10,10 +11,10 @@ import {
 	updateExistingEpisode,
 } from "./episode.server";
 import {
+	createEpisodeSchema,
 	deleteEpisodeSchema,
 	generateEpisodeSchema,
 	getEpisodeSchema,
-	getEpisodesSchema,
 	updateEpisodeSchema,
 } from "./schemas";
 
@@ -21,9 +22,8 @@ export const getEpisodes = createServerFn({
 	method: "GET",
 })
 	.middleware([authMiddleware])
-	.inputValidator(getEpisodesSchema)
-	.handler(({ data, context }) => {
-		return getAllEpisodes(data, context.session);
+	.handler(({ context }) => {
+		return getAllEpisodes(context.session);
 	});
 
 export const getEpisode = createServerFn({
@@ -42,6 +42,15 @@ export const generateEpisodeFromLog = createServerFn({
 	.inputValidator(generateEpisodeSchema)
 	.handler(({ data, context }) => {
 		return generateEpisode(data, context.session);
+	});
+
+export const createNewEpisode = createServerFn({
+	method: "POST",
+})
+	.middleware([authMiddleware])
+	.inputValidator(createEpisodeSchema)
+	.handler(async ({ data, context }) => {
+		return await createEpisode(data, context.session);
 	});
 
 export const updateEpisode = createServerFn({

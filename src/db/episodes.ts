@@ -1,11 +1,15 @@
-import { integer, text, sqliteTable, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { integer, text, sqliteTable, uniqueIndex, index } from "drizzle-orm/sqlite-core";
 
+import { user } from "@/db/auth";
 import { logs } from "@/db/logs";
 
 export const episodes = sqliteTable(
 	"episodes",
 	{
 		id: text("id").primaryKey(),
+		userId: text("userId")
+			.notNull()
+			.references(() => user.id),
 		logId: text("logId")
 			.notNull()
 			.references(() => logs.id, { onDelete: "cascade" }),
@@ -18,5 +22,8 @@ export const episodes = sqliteTable(
 		createdAt: integer("createdAt", { mode: "timestamp" }).notNull(),
 		updatedAt: integer("updatedAt", { mode: "timestamp" }).notNull(),
 	},
-	(table) => [uniqueIndex("episodes_userId_logId_idx").on(table.logId)],
+	(table) => [
+		uniqueIndex("episodes_logId_idx").on(table.logId),
+		index("episodes_userId_idx").on(table.userId),
+	],
 );

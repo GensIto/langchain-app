@@ -15,6 +15,7 @@ export const userRelations = relations(user, ({ many }) => ({
 	companies: many(companies),
 	projects: many(projects),
 	logs: many(logs),
+	episodes: many(episodes),
 	tags: many(tags),
 }));
 
@@ -47,6 +48,7 @@ export const logsRelations = relations(logs, ({ one, many }) => ({
 }));
 
 export const episodesRelations = relations(episodes, ({ one, many }) => ({
+	user: one(user, { fields: [episodes.userId], references: [user.id] }),
 	log: one(logs, { fields: [episodes.logId], references: [logs.id] }),
 	episodeTags: many(episodeTags),
 }));
