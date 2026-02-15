@@ -20,10 +20,9 @@ type EditLogDialogProps = {
 	log: LogWithTags | null;
 	tags: Tag[];
 	onClose: () => void;
-	onPreview: (content: string) => void;
 };
 
-export function EditLogDialog({ log, tags, onClose, onPreview }: EditLogDialogProps) {
+export function EditLogDialog({ log, tags, onClose }: EditLogDialogProps) {
 	const { form, handleCreateTag } = useEditLog(log, onClose);
 
 	return (
@@ -44,17 +43,7 @@ export function EditLogDialog({ log, tags, onClose, onPreview }: EditLogDialogPr
 						<form.Field name='content'>
 							{(field) => (
 								<div className='grid gap-2'>
-									<div className='flex justify-between items-center'>
-										<Label htmlFor='edit-content'>内容 (Markdown)</Label>
-										<Button
-											type='button'
-											variant='outline'
-											size='sm'
-											onClick={() => onPreview(field.state.value)}
-										>
-											プレビュー
-										</Button>
-									</div>
+									<Label htmlFor='edit-content'>内容 (Markdown)</Label>
 									<Textarea
 										id='edit-content'
 										value={field.state.value}

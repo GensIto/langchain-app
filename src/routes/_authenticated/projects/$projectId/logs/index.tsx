@@ -4,7 +4,7 @@ import { LogList } from "@/components/logs";
 import { getLogs, getTags } from "@/serverFunction/log/log.functions";
 import { getProject } from "@/serverFunction/project/project.functions";
 
-export const Route = createFileRoute("/_authenticated/projects/$projectId/logs")({
+export const Route = createFileRoute("/_authenticated/projects/$projectId/logs/")({
 	component: Logs,
 	loader: async ({ params }) => {
 		const project = await getProject({ data: { id: params.projectId } });

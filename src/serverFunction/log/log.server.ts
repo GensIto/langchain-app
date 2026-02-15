@@ -185,7 +185,10 @@ export async function removeLog(data: DeleteLogInput, session: RequiredSession) 
 	return { success: true };
 }
 
-export async function getAllTags(_data: GetTagsInput, session: RequiredSession) {
+export async function getAllTags(
+	_data: GetTagsInput,
+	session: RequiredSession,
+): Promise<{ id: string; name: string; userId: string; createdAt: Date }[]> {
 	const allTags = await getDb().select().from(tags).where(eq(tags.userId, session.user.id)).all();
 
 	return allTags;

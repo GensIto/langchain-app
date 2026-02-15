@@ -15,8 +15,9 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedCompaniesIndexRouteImport } from './routes/_authenticated/companies/index'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
-import { Route as AuthenticatedProjectsProjectIdLogsRouteImport } from './routes/_authenticated/projects/$projectId.logs'
 import { Route as AuthenticatedCompaniesCompanyIdProjectsRouteImport } from './routes/_authenticated/companies/$companyId.projects'
+import { Route as AuthenticatedProjectsProjectIdLogsIndexRouteImport } from './routes/_authenticated/projects/$projectId/logs/index'
+import { Route as AuthenticatedProjectsProjectIdLogsLogIdRouteImport } from './routes/_authenticated/projects/$projectId/logs/$logId'
 
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
@@ -48,16 +49,22 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedProjectsProjectIdLogsRoute =
-  AuthenticatedProjectsProjectIdLogsRouteImport.update({
-    id: '/projects/$projectId/logs',
-    path: '/projects/$projectId/logs',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
 const AuthenticatedCompaniesCompanyIdProjectsRoute =
   AuthenticatedCompaniesCompanyIdProjectsRouteImport.update({
     id: '/companies/$companyId/projects',
     path: '/companies/$companyId/projects',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedProjectsProjectIdLogsIndexRoute =
+  AuthenticatedProjectsProjectIdLogsIndexRouteImport.update({
+    id: '/projects/$projectId/logs/',
+    path: '/projects/$projectId/logs/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedProjectsProjectIdLogsLogIdRoute =
+  AuthenticatedProjectsProjectIdLogsLogIdRouteImport.update({
+    id: '/projects/$projectId/logs/$logId',
+    path: '/projects/$projectId/logs/$logId',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 
@@ -68,7 +75,8 @@ export interface FileRoutesByFullPath {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/companies/': typeof AuthenticatedCompaniesIndexRoute
   '/companies/$companyId/projects': typeof AuthenticatedCompaniesCompanyIdProjectsRoute
-  '/projects/$projectId/logs': typeof AuthenticatedProjectsProjectIdLogsRoute
+  '/projects/$projectId/logs/$logId': typeof AuthenticatedProjectsProjectIdLogsLogIdRoute
+  '/projects/$projectId/logs/': typeof AuthenticatedProjectsProjectIdLogsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -77,7 +85,8 @@ export interface FileRoutesByTo {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/companies': typeof AuthenticatedCompaniesIndexRoute
   '/companies/$companyId/projects': typeof AuthenticatedCompaniesCompanyIdProjectsRoute
-  '/projects/$projectId/logs': typeof AuthenticatedProjectsProjectIdLogsRoute
+  '/projects/$projectId/logs/$logId': typeof AuthenticatedProjectsProjectIdLogsLogIdRoute
+  '/projects/$projectId/logs': typeof AuthenticatedProjectsProjectIdLogsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -88,7 +97,8 @@ export interface FileRoutesById {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/_authenticated/companies/': typeof AuthenticatedCompaniesIndexRoute
   '/_authenticated/companies/$companyId/projects': typeof AuthenticatedCompaniesCompanyIdProjectsRoute
-  '/_authenticated/projects/$projectId/logs': typeof AuthenticatedProjectsProjectIdLogsRoute
+  '/_authenticated/projects/$projectId/logs/$logId': typeof AuthenticatedProjectsProjectIdLogsLogIdRoute
+  '/_authenticated/projects/$projectId/logs/': typeof AuthenticatedProjectsProjectIdLogsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -99,7 +109,8 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/companies/'
     | '/companies/$companyId/projects'
-    | '/projects/$projectId/logs'
+    | '/projects/$projectId/logs/$logId'
+    | '/projects/$projectId/logs/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -108,6 +119,7 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/companies'
     | '/companies/$companyId/projects'
+    | '/projects/$projectId/logs/$logId'
     | '/projects/$projectId/logs'
   id:
     | '__root__'
@@ -118,7 +130,8 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/_authenticated/companies/'
     | '/_authenticated/companies/$companyId/projects'
-    | '/_authenticated/projects/$projectId/logs'
+    | '/_authenticated/projects/$projectId/logs/$logId'
+    | '/_authenticated/projects/$projectId/logs/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -173,18 +186,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/projects/$projectId/logs': {
-      id: '/_authenticated/projects/$projectId/logs'
-      path: '/projects/$projectId/logs'
-      fullPath: '/projects/$projectId/logs'
-      preLoaderRoute: typeof AuthenticatedProjectsProjectIdLogsRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
     '/_authenticated/companies/$companyId/projects': {
       id: '/_authenticated/companies/$companyId/projects'
       path: '/companies/$companyId/projects'
       fullPath: '/companies/$companyId/projects'
       preLoaderRoute: typeof AuthenticatedCompaniesCompanyIdProjectsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/projects/$projectId/logs/': {
+      id: '/_authenticated/projects/$projectId/logs/'
+      path: '/projects/$projectId/logs'
+      fullPath: '/projects/$projectId/logs/'
+      preLoaderRoute: typeof AuthenticatedProjectsProjectIdLogsIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/projects/$projectId/logs/$logId': {
+      id: '/_authenticated/projects/$projectId/logs/$logId'
+      path: '/projects/$projectId/logs/$logId'
+      fullPath: '/projects/$projectId/logs/$logId'
+      preLoaderRoute: typeof AuthenticatedProjectsProjectIdLogsLogIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
   }
@@ -193,15 +213,18 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteChildren {
   AuthenticatedCompaniesIndexRoute: typeof AuthenticatedCompaniesIndexRoute
   AuthenticatedCompaniesCompanyIdProjectsRoute: typeof AuthenticatedCompaniesCompanyIdProjectsRoute
-  AuthenticatedProjectsProjectIdLogsRoute: typeof AuthenticatedProjectsProjectIdLogsRoute
+  AuthenticatedProjectsProjectIdLogsLogIdRoute: typeof AuthenticatedProjectsProjectIdLogsLogIdRoute
+  AuthenticatedProjectsProjectIdLogsIndexRoute: typeof AuthenticatedProjectsProjectIdLogsIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedCompaniesIndexRoute: AuthenticatedCompaniesIndexRoute,
   AuthenticatedCompaniesCompanyIdProjectsRoute:
     AuthenticatedCompaniesCompanyIdProjectsRoute,
-  AuthenticatedProjectsProjectIdLogsRoute:
-    AuthenticatedProjectsProjectIdLogsRoute,
+  AuthenticatedProjectsProjectIdLogsLogIdRoute:
+    AuthenticatedProjectsProjectIdLogsLogIdRoute,
+  AuthenticatedProjectsProjectIdLogsIndexRoute:
+    AuthenticatedProjectsProjectIdLogsIndexRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(

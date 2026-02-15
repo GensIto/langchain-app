@@ -1,3 +1,4 @@
+import { useNavigate } from "@tanstack/react-router";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -5,18 +6,22 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 
-import { useDeleteLog } from "./hooks/useDeleteLog";
-
 import type { LogWithTags } from "../types";
 
 type LogCardProps = {
 	log: LogWithTags;
-	onPreview: (content: string) => void;
-	onEdit: (log: LogWithTags) => void;
+	projectId: string;
 };
 
-export function LogCard({ log, onPreview, onEdit }: LogCardProps) {
-	const { handleDelete } = useDeleteLog();
+export function LogCard({ log, projectId }: LogCardProps) {
+	const navigate = useNavigate();
+
+	const handleViewDetail = () => {
+		void navigate({
+			to: "/projects/$projectId/logs/$logId",
+			params: { projectId, logId: log.id },
+		});
+	};
 
 	return (
 		<Card className='hover:shadow-lg transition-shadow'>
@@ -35,14 +40,8 @@ export function LogCard({ log, onPreview, onEdit }: LogCardProps) {
 						</div>
 					</div>
 					<div className='flex gap-2'>
-						<Button variant='outline' size='sm' onClick={() => onPreview(log.content)}>
-							プレビュー
-						</Button>
-						<Button variant='outline' size='sm' onClick={() => onEdit(log)}>
-							編集
-						</Button>
-						<Button variant='destructive' size='sm' onClick={() => void handleDelete(log.id)}>
-							削除
+						<Button variant='outline' size='sm' onClick={handleViewDetail}>
+							詳細を見る
 						</Button>
 					</div>
 				</div>

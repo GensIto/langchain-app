@@ -22,16 +22,9 @@ type CreateLogDialogProps = {
 	tags: Tag[];
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	onPreview: (content: string) => void;
 };
 
-export function CreateLogDialog({
-	projectId,
-	tags,
-	open,
-	onOpenChange,
-	onPreview,
-}: CreateLogDialogProps) {
+export function CreateLogDialog({ projectId, tags, open, onOpenChange }: CreateLogDialogProps) {
 	const { form, handleCreateTag } = useCreateLog({
 		projectId,
 		onSuccess: () => onOpenChange(false),
@@ -58,17 +51,7 @@ export function CreateLogDialog({
 						<form.Field name='content'>
 							{(field) => (
 								<div className='grid gap-2'>
-									<div className='flex justify-between items-center'>
-										<Label htmlFor='content'>内容 (Markdown)</Label>
-										<Button
-											type='button'
-											variant='outline'
-											size='sm'
-											onClick={() => onPreview(field.state.value)}
-										>
-											プレビュー
-										</Button>
-									</div>
+									<Label htmlFor='content'>内容 (Markdown)</Label>
 									<Textarea
 										id='content'
 										value={field.state.value}

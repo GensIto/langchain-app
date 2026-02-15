@@ -4,10 +4,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
 import { CreateLogDialog } from "../CreateLogDialog";
-import { EditLogDialog } from "../EditLogDialog";
 import { EmptyState } from "../EmptyState";
 import { LogCard } from "../LogCard";
-import { PreviewDialog } from "../PreviewDialog";
 import { TagManagementDialog } from "../TagManagementDialog";
 
 import type { LogWithTags, Tag } from "../types";
@@ -22,15 +20,7 @@ type LogListProps = {
 export function LogList({ projectName, projectId, logs, tags }: LogListProps) {
 	const navigate = useNavigate();
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
-	const [editingLog, setEditingLog] = useState<LogWithTags | null>(null);
 	const [isTagManageOpen, setIsTagManageOpen] = useState(false);
-	const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-	const [previewContent, setPreviewContent] = useState("");
-
-	const openPreview = (content: string) => {
-		setPreviewContent(content);
-		setIsPreviewOpen(true);
-	};
 
 	return (
 		<div className='min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900'>
@@ -57,34 +47,19 @@ export function LogList({ projectName, projectId, logs, tags }: LogListProps) {
 							tags={tags}
 							open={isCreateOpen}
 							onOpenChange={setIsCreateOpen}
-							onPreview={openPreview}
 						/>
 					</div>
 				</div>
 
 				<div className='grid grid-cols-1 gap-6'>
 					{logs.map((log) => (
-						<LogCard key={log.id} log={log} onPreview={openPreview} onEdit={setEditingLog} />
+						<LogCard key={log.id} log={log} projectId={projectId} />
 					))}
 				</div>
 
 				{logs.length === 0 && <EmptyState onCreateClick={() => setIsCreateOpen(true)} />}
 
-				<EditLogDialog
-					key={editingLog?.id}
-					log={editingLog}
-					tags={tags}
-					onClose={() => setEditingLog(null)}
-					onPreview={openPreview}
-				/>
-
 				<TagManagementDialog tags={tags} open={isTagManageOpen} onOpenChange={setIsTagManageOpen} />
-
-				<PreviewDialog
-					content={previewContent}
-					open={isPreviewOpen}
-					onOpenChange={setIsPreviewOpen}
-				/>
 			</div>
 		</div>
 	);
