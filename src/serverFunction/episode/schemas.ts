@@ -53,3 +53,11 @@ export type GenerateEpisodeInput = z.infer<typeof generateEpisodeSchema>;
 export type CreateEpisodeInput = z.infer<typeof createEpisodeSchema>;
 export type UpdateEpisodeInput = z.infer<typeof updateEpisodeSchema>;
 export type DeleteEpisodeInput = z.infer<typeof deleteEpisodeSchema>;
+
+export type EpisodeVectorMetadata = {
+	userId: string;
+	episodeId: string;
+	logId: string;
+	impactLevel: string;
+	title: string;
+};

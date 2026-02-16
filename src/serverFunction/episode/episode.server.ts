@@ -15,11 +15,14 @@ import {
 	generateStarResponseSchema,
 	type CreateEpisodeInput,
 	type DeleteEpisodeInput,
+	type EpisodeVectorMetadata,
 	type GenerateEpisodeInput,
 	type GetEpisodeInput,
 	type SearchEpisodesInput,
 	type UpdateEpisodeInput,
 } from "./schemas";
+
+import type { DocumentInterface } from "@langchain/core/documents";
 
 const logger = getLogger(["app", "episode"]);
 
@@ -34,16 +37,17 @@ export async function retrieveEpisodes(data: SearchEpisodesInput, session: Requi
 		index: env.VECTORIZE_INDEX,
 	});
 
-	const results = await vectorStore.similaritySearchWithScore(data.query, 5, {
-		userId: session.user.id,
-	});
+	const results = await vectorStore.similaritySearch(data.query, 5);
+	logger.info("vector search results: {results}", { results });
 
-	const episodeIds = results.map(([doc]) => doc.metadata.episodeId as string).filter(Boolean);
+	const typedResults = results as DocumentInterface<EpisodeVectorMetadata>[];
+	const episodeIds = typedResults.map((doc) => doc.metadata.episodeId).filter(Boolean);
 
 	if (episodeIds.length === 0) {
 		logger.info("No episodes found for query");
 		return [];
 	}
+	logger.info("episodeIds: {episodeIds}", { episodeIds });
 
 	const dbEpisodes = await getDb().query.episodes.findMany({
 		where: and(inArray(episodes.id, episodeIds), eq(episodes.userId, session.user.id)),
