@@ -9,6 +9,7 @@ import { episodes } from "@/db/episodes";
 import { logs } from "@/db/logs";
 import { episodeTags, tags } from "@/db/tags";
 import type { RequiredSession } from "@/lib/auth";
+import { createEmbeddings } from "@/serverFunction/utils/createLLM";
 
 import {
 	generateStarResponseSchema,
@@ -16,10 +17,57 @@ import {
 	type DeleteEpisodeInput,
 	type GenerateEpisodeInput,
 	type GetEpisodeInput,
+	type SearchEpisodesInput,
 	type UpdateEpisodeInput,
 } from "./schemas";
 
 const logger = getLogger(["app", "episode"]);
+
+export async function retrieveEpisodes(data: SearchEpisodesInput, session: RequiredSession) {
+	logger.info("Retrieving episodes for query: {query}", {
+		query: data.query,
+		userId: session.user.id,
+	});
+
+	const embeddings = createEmbeddings();
+	const vectorStore = new CloudflareVectorizeStore(embeddings, {
+		index: env.VECTORIZE_INDEX,
+	});
+
+	const results = await vectorStore.similaritySearchWithScore(data.query, 5, {
+		userId: session.user.id,
+	});
+
+	const episodeIds = results.map(([doc]) => doc.metadata.episodeId as string).filter(Boolean);
+
+	if (episodeIds.length === 0) {
+		logger.info("No episodes found for query");
+		return [];
+	}
+
+	const dbEpisodes = await getDb().query.episodes.findMany({
+		where: and(inArray(episodes.id, episodeIds), eq(episodes.userId, session.user.id)),
+		with: {
+			episodeTags: {
+				with: { tag: true },
+			},
+		},
+	});
+
+	// ベクトル検索のスコア順を維持
+	const episodeMap = new Map(dbEpisodes.map((e) => [e.id, e]));
+	const sorted = episodeIds.flatMap((id) => {
+		const e = episodeMap.get(id);
+		return e ? [e] : [];
+	});
+
+	logger.info("Retrieved {count} episodes", { count: sorted.length });
+
+	return sorted.map(({ episodeTags: eTags, ...episode }) => ({
+		...episode,
+		tags: eTags.map((et) => ({ id: et.tag.id, name: et.tag.name })),
+	}));
+}
 
 export async function getAllEpisodes(session: RequiredSession) {
 	logger.info("Fetching all episodes for user {userId}", { userId: session.user.id });

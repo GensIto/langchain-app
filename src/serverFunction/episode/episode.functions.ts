@@ -8,6 +8,7 @@ import {
 	getAllEpisodes,
 	getEpisodeById,
 	removeEpisode,
+	retrieveEpisodes,
 	updateExistingEpisode,
 } from "./episode.server";
 import {
@@ -15,8 +16,18 @@ import {
 	deleteEpisodeSchema,
 	generateEpisodeSchema,
 	getEpisodeSchema,
+	searchEpisodesSchema,
 	updateEpisodeSchema,
 } from "./schemas";
+
+export const searchEpisodes = createServerFn({
+	method: "POST",
+})
+	.middleware([authMiddleware])
+	.inputValidator(searchEpisodesSchema)
+	.handler(async ({ data, context }) => {
+		return retrieveEpisodes(data, context.session);
+	});
 
 export const getEpisodes = createServerFn({
 	method: "GET",

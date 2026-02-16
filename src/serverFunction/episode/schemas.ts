@@ -1,5 +1,9 @@
 import { z } from "zod";
 
+export const searchEpisodesSchema = z.object({
+	query: z.string(),
+});
+
 export const getEpisodeSchema = z.object({
 	id: z.string(),
 });
@@ -43,6 +47,7 @@ export const deleteEpisodeSchema = z.object({
 	id: z.string(),
 });
 
+export type SearchEpisodesInput = z.infer<typeof searchEpisodesSchema>;
 export type GetEpisodeInput = z.infer<typeof getEpisodeSchema>;
 export type GenerateEpisodeInput = z.infer<typeof generateEpisodeSchema>;
 export type CreateEpisodeInput = z.infer<typeof createEpisodeSchema>;
