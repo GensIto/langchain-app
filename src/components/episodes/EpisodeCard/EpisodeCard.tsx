@@ -45,6 +45,9 @@ export function EpisodeCard({ episode }: EpisodeCardProps) {
 							<Badge variant={impactLevelVariant[episode.impactLevel]}>
 								{impactLevelLabel[episode.impactLevel]}
 							</Badge>
+							{episode.score !== undefined && (
+								<Badge variant='secondary'>類似度: {(episode.score * 100).toFixed(1)}%</Badge>
+							)}
 							{episode.tags.map((tag) => (
 								<Badge key={tag.id} variant='outline'>
 									{tag.name}

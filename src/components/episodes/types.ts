@@ -10,4 +10,5 @@ export type EpisodeWithTags = {
 	createdAt: Date;
 	updatedAt: Date;
 	tags: { id: string; name: string }[];
+	score?: number; // ベクトル検索の類似度スコア（検索時のみ）
 };

@@ -82,14 +82,8 @@ function EpisodeDetail() {
 							</div>
 						</div>
 						<div className='flex flex-wrap gap-2'>
-							<Badge
-								variant={
-									impactLevelVariant[
-										episode.impactLevel as keyof typeof impactLevelVariant
-									]
-								}
-							>
-								{impactLevelLabel[episode.impactLevel as keyof typeof impactLevelLabel]}
+							<Badge variant={impactLevelVariant[episode.impactLevel]}>
+								{impactLevelLabel[episode.impactLevel]}
 							</Badge>
 							{episode.tags.map((tag: { id: string; name: string }) => (
 								<Badge key={tag.id} variant='outline'>
@@ -100,22 +94,29 @@ function EpisodeDetail() {
 					</CardHeader>
 					<CardContent>
 						<div className='grid gap-6'>
-							<section>
-								<h3 className='text-lg font-semibold text-white mb-2'>Situation</h3>
-								<p className='text-gray-300 whitespace-pre-wrap'>{episode.situation}</p>
-							</section>
-							<section>
-								<h3 className='text-lg font-semibold text-white mb-2'>Task</h3>
-								<p className='text-gray-300 whitespace-pre-wrap'>{episode.task}</p>
-							</section>
-							<section>
-								<h3 className='text-lg font-semibold text-white mb-2'>Action</h3>
-								<p className='text-gray-300 whitespace-pre-wrap'>{episode.action}</p>
-							</section>
-							<section>
-								<h3 className='text-lg font-semibold text-white mb-2'>Result</h3>
-								<p className='text-gray-300 whitespace-pre-wrap'>{episode.result}</p>
-							</section>
+							{[
+								{
+									name: "Situation",
+									value: episode.situation,
+								},
+								{
+									name: "Task",
+									value: episode.task,
+								},
+								{
+									name: "Action",
+									value: episode.action,
+								},
+								{
+									name: "Result",
+									value: episode.result,
+								},
+							].map((section) => (
+								<section key={section.name}>
+									<h3 className='text-lg font-semibold mb-2'>{section.name}</h3>
+									<p className='whitespace-pre-wrap'>{section.value}</p>
+								</section>
+							))}
 						</div>
 					</CardContent>
 				</Card>

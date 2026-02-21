@@ -51,13 +51,14 @@ function Episodes() {
 	const displayEpisodes = searchResults ?? episodes;
 
 	return (
-		<div className='min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900'>
+		<div className='min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 px-8 py-4'>
 			<form
 				onSubmit={(e) => {
 					e.preventDefault();
 					e.stopPropagation();
 					void form.handleSubmit();
 				}}
+				className='flex'
 			>
 				<form.Field name='query'>
 					{(field) => (

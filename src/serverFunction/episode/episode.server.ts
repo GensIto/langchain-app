@@ -37,11 +37,23 @@ export async function retrieveEpisodes(data: SearchEpisodesInput, session: Requi
 		index: env.VECTORIZE_INDEX,
 	});
 
-	const results = await vectorStore.similaritySearch(data.query, 5);
-	logger.info("vector search results: {results}", { results });
+	const results = await vectorStore.similaritySearchWithScore(data.query, 5);
 
-	const typedResults = results as DocumentInterface<EpisodeVectorMetadata>[];
-	const episodeIds = typedResults.map((doc) => doc.metadata.episodeId).filter(Boolean);
+	logger.info("vector search results with scores: {results}", {
+		results: results.map(([doc, score]) => ({
+			score,
+			metadata: doc.metadata,
+			content: doc.pageContent,
+		})),
+	});
+
+	// その後の処理でスコアも含めて扱う場合
+	const typedResults = results.map(([doc, score]) => ({
+		doc: doc as DocumentInterface<EpisodeVectorMetadata>,
+		score,
+	}));
+
+	const episodeIds = typedResults.map((r) => r.doc.metadata.episodeId).filter(Boolean);
 
 	if (episodeIds.length === 0) {
 		logger.info("No episodes found for query");
@@ -58,18 +70,23 @@ export async function retrieveEpisodes(data: SearchEpisodesInput, session: Requi
 		},
 	});
 
+	// スコアマップを作成
+	const scoreMap = new Map(typedResults.map((r) => [r.doc.metadata.episodeId, r.score]));
+
 	// ベクトル検索のスコア順を維持
 	const episodeMap = new Map(dbEpisodes.map((e) => [e.id, e]));
-	const sorted = episodeIds.flatMap((id) => {
+	const sortedEpisodes = episodeIds.flatMap((id) => {
 		const e = episodeMap.get(id);
-		return e ? [e] : [];
+		const score = scoreMap.get(id);
+		return e ? [{ ...e, score }] : [];
 	});
 
-	logger.info("Retrieved {count} episodes", { count: sorted.length });
+	logger.info("Retrieved {count} episodes", { count: sortedEpisodes.length });
 
-	return sorted.map(({ episodeTags: eTags, ...episode }) => ({
+	return sortedEpisodes.map(({ episodeTags: eTags, score, ...episode }) => ({
 		...episode,
 		tags: eTags.map((et) => ({ id: et.tag.id, name: et.tag.name })),
+		score,
 	}));
 }
 
@@ -90,6 +107,7 @@ export async function getAllEpisodes(session: RequiredSession) {
 	return result.map(({ episodeTags, ...episode }) => ({
 		...episode,
 		tags: episodeTags.map((et) => ({ id: et.tag.id, name: et.tag.name })),
+		score: undefined, // 検索結果ではないためundefined
 	}));
 }
 
