@@ -1,6 +1,7 @@
 import { relations } from "drizzle-orm";
 
 import { account, session, user } from "./auth";
+import { chatMessageEpisodes, chatMessages, chatSessions } from "./chat";
 import { companies } from "./companies";
 import { episodes } from "./episodes";
 import { logs } from "./logs";
@@ -17,6 +18,7 @@ export const userRelations = relations(user, ({ many }) => ({
 	logs: many(logs),
 	episodes: many(episodes),
 	tags: many(tags),
+	chatSessions: many(chatSessions),
 }));
 
 export const sessionRelations = relations(session, ({ one }) => ({
@@ -51,6 +53,7 @@ export const episodesRelations = relations(episodes, ({ one, many }) => ({
 	user: one(user, { fields: [episodes.userId], references: [user.id] }),
 	log: one(logs, { fields: [episodes.logId], references: [logs.id] }),
 	episodeTags: many(episodeTags),
+	chatMessageEpisodes: many(chatMessageEpisodes),
 }));
 
 // --- Tags ---
@@ -69,4 +72,27 @@ export const logTagsRelations = relations(logTags, ({ one }) => ({
 export const episodeTagsRelations = relations(episodeTags, ({ one }) => ({
 	episode: one(episodes, { fields: [episodeTags.episodeId], references: [episodes.id] }),
 	tag: one(tags, { fields: [episodeTags.tagId], references: [tags.id] }),
+}));
+
+// --- Chat ---
+
+export const chatSessionsRelations = relations(chatSessions, ({ one, many }) => ({
+	user: one(user, { fields: [chatSessions.userId], references: [user.id] }),
+	chatMessages: many(chatMessages),
+}));
+
+export const chatMessagesRelations = relations(chatMessages, ({ one, many }) => ({
+	chatSession: one(chatSessions, {
+		fields: [chatMessages.sessionId],
+		references: [chatSessions.id],
+	}),
+	chatMessageEpisodes: many(chatMessageEpisodes),
+}));
+
+export const chatMessageEpisodesRelations = relations(chatMessageEpisodes, ({ one }) => ({
+	chatMessage: one(chatMessages, {
+		fields: [chatMessageEpisodes.messageId],
+		references: [chatMessages.id],
+	}),
+	episode: one(episodes, { fields: [chatMessageEpisodes.episodeId], references: [episodes.id] }),
 }));
