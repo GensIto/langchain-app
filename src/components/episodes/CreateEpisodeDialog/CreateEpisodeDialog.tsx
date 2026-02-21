@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { TagSelector } from "@/components/logs/TagSelector/TagSelector";
+import type { Tag } from "@/components/logs/types";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -20,15 +22,11 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-
-import { TagSelector } from "@/components/logs/TagSelector/TagSelector";
-
 import { generateEpisodeFromLog } from "@/serverFunction/episode/episode.functions";
 import type { generateStarResponseSchema } from "@/serverFunction/episode/schemas";
 
 import { useCreateEpisode } from "./hooks/useCreateEpisode";
 
-import type { Tag } from "@/components/logs/types";
 import type { z } from "zod";
 
 type GeneratedData = z.infer<typeof generateStarResponseSchema>;
@@ -45,20 +43,25 @@ export function CreateEpisodeDialog({ logId, tags, open, onOpenChange }: CreateE
 	const [generatedData, setGeneratedData] = useState<GeneratedData | null>(null);
 
 	useEffect(() => {
-		if (open && !generatedData && !isGenerating) {
+		const asyncGenerateEpisode = async () => {
 			setIsGenerating(true);
-			generateEpisodeFromLog({ data: { logId } })
-				.then(setGeneratedData)
-				.catch(() => {
-					toast.error("エピソードの生成に失敗しました");
-					onOpenChange(false);
-				})
-				.finally(() => setIsGenerating(false));
+			try {
+				const data = await generateEpisodeFromLog({ data: { logId } });
+				setGeneratedData(data);
+			} catch {
+				toast.error("エピソードの生成に失敗しました");
+				onOpenChange(false);
+			} finally {
+				setIsGenerating(false);
+			}
+		};
+		if (open && !generatedData && !isGenerating) {
+			void asyncGenerateEpisode();
 		}
 		if (!open) {
 			setGeneratedData(null);
 		}
-	}, [open]);
+	}, [open, generatedData, isGenerating, logId, onOpenChange]);
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
@@ -119,9 +122,7 @@ function CreateEpisodeForm({
 									disabled={form.state.isSubmitting}
 								/>
 								{field.state.meta.errors.length > 0 && (
-									<p className='text-sm text-red-400'>
-										{String(field.state.meta.errors[0])}
-									</p>
+									<p className='text-sm text-red-400'>{String(field.state.meta.errors[0])}</p>
 								)}
 							</div>
 						)}
@@ -133,9 +134,7 @@ function CreateEpisodeForm({
 								<Label>影響度</Label>
 								<Select
 									value={field.state.value}
-									onValueChange={(v) =>
-										field.handleChange(v as "low" | "medium" | "high")
-									}
+									onValueChange={(v) => field.handleChange(v as "low" | "medium" | "high")}
 									disabled={form.state.isSubmitting}
 								>
 									<SelectTrigger>
@@ -163,9 +162,7 @@ function CreateEpisodeForm({
 									disabled={form.state.isSubmitting}
 								/>
 								{field.state.meta.errors.length > 0 && (
-									<p className='text-sm text-red-400'>
-										{String(field.state.meta.errors[0])}
-									</p>
+									<p className='text-sm text-red-400'>{String(field.state.meta.errors[0])}</p>
 								)}
 							</div>
 						)}
@@ -183,9 +180,7 @@ function CreateEpisodeForm({
 									disabled={form.state.isSubmitting}
 								/>
 								{field.state.meta.errors.length > 0 && (
-									<p className='text-sm text-red-400'>
-										{String(field.state.meta.errors[0])}
-									</p>
+									<p className='text-sm text-red-400'>{String(field.state.meta.errors[0])}</p>
 								)}
 							</div>
 						)}
@@ -203,9 +198,7 @@ function CreateEpisodeForm({
 									disabled={form.state.isSubmitting}
 								/>
 								{field.state.meta.errors.length > 0 && (
-									<p className='text-sm text-red-400'>
-										{String(field.state.meta.errors[0])}
-									</p>
+									<p className='text-sm text-red-400'>{String(field.state.meta.errors[0])}</p>
 								)}
 							</div>
 						)}
@@ -223,9 +216,7 @@ function CreateEpisodeForm({
 									disabled={form.state.isSubmitting}
 								/>
 								{field.state.meta.errors.length > 0 && (
-									<p className='text-sm text-red-400'>
-										{String(field.state.meta.errors[0])}
-									</p>
+									<p className='text-sm text-red-400'>{String(field.state.meta.errors[0])}</p>
 								)}
 							</div>
 						)}

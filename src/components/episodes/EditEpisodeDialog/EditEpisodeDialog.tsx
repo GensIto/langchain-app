@@ -1,3 +1,5 @@
+import { TagSelector } from "@/components/logs/TagSelector/TagSelector";
+import type { Tag } from "@/components/logs/types";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -18,11 +20,8 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
-import { TagSelector } from "@/components/logs/TagSelector/TagSelector";
-
 import { useEditEpisode } from "./hooks/useEditEpisode";
 
-import type { Tag } from "@/components/logs/types";
 import type { EpisodeWithTags } from "../types";
 
 type EditEpisodeDialogProps = {
@@ -60,9 +59,7 @@ export function EditEpisodeDialog({ episode, tags, onClose }: EditEpisodeDialogP
 										disabled={form.state.isSubmitting}
 									/>
 									{field.state.meta.errors.length > 0 && (
-										<p className='text-sm text-red-400'>
-											{String(field.state.meta.errors[0])}
-										</p>
+										<p className='text-sm text-red-400'>{String(field.state.meta.errors[0])}</p>
 									)}
 								</div>
 							)}
@@ -74,9 +71,7 @@ export function EditEpisodeDialog({ episode, tags, onClose }: EditEpisodeDialogP
 									<Label>影響度</Label>
 									<Select
 										value={field.state.value}
-										onValueChange={(v) =>
-											field.handleChange(v as "low" | "medium" | "high")
-										}
+										onValueChange={(v) => field.handleChange(v as "low" | "medium" | "high")}
 										disabled={form.state.isSubmitting}
 									>
 										<SelectTrigger>
@@ -104,9 +99,7 @@ export function EditEpisodeDialog({ episode, tags, onClose }: EditEpisodeDialogP
 										disabled={form.state.isSubmitting}
 									/>
 									{field.state.meta.errors.length > 0 && (
-										<p className='text-sm text-red-400'>
-											{String(field.state.meta.errors[0])}
-										</p>
+										<p className='text-sm text-red-400'>{String(field.state.meta.errors[0])}</p>
 									)}
 								</div>
 							)}
@@ -124,9 +117,7 @@ export function EditEpisodeDialog({ episode, tags, onClose }: EditEpisodeDialogP
 										disabled={form.state.isSubmitting}
 									/>
 									{field.state.meta.errors.length > 0 && (
-										<p className='text-sm text-red-400'>
-											{String(field.state.meta.errors[0])}
-										</p>
+										<p className='text-sm text-red-400'>{String(field.state.meta.errors[0])}</p>
 									)}
 								</div>
 							)}
@@ -144,9 +135,7 @@ export function EditEpisodeDialog({ episode, tags, onClose }: EditEpisodeDialogP
 										disabled={form.state.isSubmitting}
 									/>
 									{field.state.meta.errors.length > 0 && (
-										<p className='text-sm text-red-400'>
-											{String(field.state.meta.errors[0])}
-										</p>
+										<p className='text-sm text-red-400'>{String(field.state.meta.errors[0])}</p>
 									)}
 								</div>
 							)}
@@ -164,9 +153,7 @@ export function EditEpisodeDialog({ episode, tags, onClose }: EditEpisodeDialogP
 										disabled={form.state.isSubmitting}
 									/>
 									{field.state.meta.errors.length > 0 && (
-										<p className='text-sm text-red-400'>
-											{String(field.state.meta.errors[0])}
-										</p>
+										<p className='text-sm text-red-400'>{String(field.state.meta.errors[0])}</p>
 									)}
 								</div>
 							)}

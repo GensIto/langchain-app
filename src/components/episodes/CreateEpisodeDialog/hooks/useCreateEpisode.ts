@@ -3,15 +3,17 @@ import { useRouter } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { z } from "zod";
 
-import { createTag } from "@/serverFunction/log/log.functions";
 import { createNewEpisode } from "@/serverFunction/episode/episode.functions";
-
-import type { z as zod } from "zod";
 import type { generateStarResponseSchema } from "@/serverFunction/episode/schemas";
+import { createTag } from "@/serverFunction/log/log.functions";
 
-type GeneratedData = zod.infer<typeof generateStarResponseSchema>;
+type GeneratedData = z.infer<typeof generateStarResponseSchema>;
 
-export function useCreateEpisode(logId: string, generatedData: GeneratedData, onSuccess: () => void) {
+export function useCreateEpisode(
+	logId: string,
+	generatedData: GeneratedData,
+	onSuccess: () => void,
+) {
 	const router = useRouter();
 
 	const form = useForm({
