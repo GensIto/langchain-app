@@ -20,7 +20,6 @@ import {
 	getChatMessageEpisodesSchema,
 	getChatMessagesSchema,
 	getChatSessionSchema,
-	getChatSessionsSchema,
 	linkChatMessageEpisodeSchema,
 	updateChatSessionSchema,
 } from "./schemas";
@@ -31,9 +30,8 @@ export const getChatSessions = createServerFn({
 	method: "GET",
 })
 	.middleware([authMiddleware])
-	.inputValidator(getChatSessionsSchema)
-	.handler(({ data, context }) => {
-		return getAllChatSessions(data, context.session);
+	.handler(({ context }) => {
+		return getAllChatSessions(context.session);
 	});
 
 export const getChatSession = createServerFn({
@@ -42,7 +40,7 @@ export const getChatSession = createServerFn({
 	.middleware([authMiddleware])
 	.inputValidator(getChatSessionSchema)
 	.handler(({ data, context }) => {
-		return getChatSessionById(data, context.session);
+		return getChatSessionById(data.id, context.session);
 	});
 
 export const createChatSession = createServerFn({

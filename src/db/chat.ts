@@ -33,7 +33,7 @@ export const chatMessages = sqliteTable(
 		id: text("id").primaryKey(),
 		sessionId: text("sessionId")
 			.notNull()
-			.references(() => chatSessions.id),
+			.references(() => chatSessions.id, { onDelete: "cascade" }),
 		message: text("message").notNull(),
 		role: text("role", { enum: ["system", "user", "assistant"] }).notNull(),
 		tokenCount: integer("tokenCount").notNull(),
