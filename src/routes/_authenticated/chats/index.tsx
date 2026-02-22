@@ -5,5 +5,7 @@ export const Route = createFileRoute("/_authenticated/chats/")({
 });
 
 function ChatsIndex() {
-	return <div>チャットを選択してください</div>;
+	return (
+		<div className='text-center text-2xl font-bold text-white'>チャットを選択してください</div>
+	);
 }
