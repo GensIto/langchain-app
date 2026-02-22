@@ -13,10 +13,13 @@ import { Route as SignupRouteImport } from './routes/signup'
 import { Route as SigninRouteImport } from './routes/signin'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedChatsRouteImport } from './routes/_authenticated/chats'
 import { Route as AuthenticatedEpisodesIndexRouteImport } from './routes/_authenticated/episodes/index'
 import { Route as AuthenticatedCompaniesIndexRouteImport } from './routes/_authenticated/companies/index'
+import { Route as AuthenticatedChatsIndexRouteImport } from './routes/_authenticated/chats/index'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AuthenticatedEpisodesEpisodeIdRouteImport } from './routes/_authenticated/episodes/$episodeId'
+import { Route as AuthenticatedChatsChatIdRouteImport } from './routes/_authenticated/chats/$chatId'
 import { Route as AuthenticatedCompaniesCompanyIdProjectsRouteImport } from './routes/_authenticated/companies/$companyId.projects'
 import { Route as AuthenticatedProjectsProjectIdLogsIndexRouteImport } from './routes/_authenticated/projects/$projectId/logs/index'
 import { Route as AuthenticatedProjectsProjectIdLogsLogIdRouteImport } from './routes/_authenticated/projects/$projectId/logs/$logId'
@@ -40,6 +43,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedChatsRoute = AuthenticatedChatsRouteImport.update({
+  id: '/chats',
+  path: '/chats',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedEpisodesIndexRoute =
   AuthenticatedEpisodesIndexRouteImport.update({
     id: '/episodes/',
@@ -52,6 +60,11 @@ const AuthenticatedCompaniesIndexRoute =
     path: '/companies/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedChatsIndexRoute = AuthenticatedChatsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedChatsRoute,
+} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
@@ -62,6 +75,12 @@ const AuthenticatedEpisodesEpisodeIdRoute =
     id: '/episodes/$episodeId',
     path: '/episodes/$episodeId',
     getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedChatsChatIdRoute =
+  AuthenticatedChatsChatIdRouteImport.update({
+    id: '/$chatId',
+    path: '/$chatId',
+    getParentRoute: () => AuthenticatedChatsRoute,
   } as any)
 const AuthenticatedCompaniesCompanyIdProjectsRoute =
   AuthenticatedCompaniesCompanyIdProjectsRouteImport.update({
@@ -86,8 +105,11 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
+  '/chats': typeof AuthenticatedChatsRouteWithChildren
+  '/chats/$chatId': typeof AuthenticatedChatsChatIdRoute
   '/episodes/$episodeId': typeof AuthenticatedEpisodesEpisodeIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/chats/': typeof AuthenticatedChatsIndexRoute
   '/companies/': typeof AuthenticatedCompaniesIndexRoute
   '/episodes/': typeof AuthenticatedEpisodesIndexRoute
   '/companies/$companyId/projects': typeof AuthenticatedCompaniesCompanyIdProjectsRoute
@@ -98,8 +120,10 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
+  '/chats/$chatId': typeof AuthenticatedChatsChatIdRoute
   '/episodes/$episodeId': typeof AuthenticatedEpisodesEpisodeIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/chats': typeof AuthenticatedChatsIndexRoute
   '/companies': typeof AuthenticatedCompaniesIndexRoute
   '/episodes': typeof AuthenticatedEpisodesIndexRoute
   '/companies/$companyId/projects': typeof AuthenticatedCompaniesCompanyIdProjectsRoute
@@ -112,8 +136,11 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
+  '/_authenticated/chats': typeof AuthenticatedChatsRouteWithChildren
+  '/_authenticated/chats/$chatId': typeof AuthenticatedChatsChatIdRoute
   '/_authenticated/episodes/$episodeId': typeof AuthenticatedEpisodesEpisodeIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/_authenticated/chats/': typeof AuthenticatedChatsIndexRoute
   '/_authenticated/companies/': typeof AuthenticatedCompaniesIndexRoute
   '/_authenticated/episodes/': typeof AuthenticatedEpisodesIndexRoute
   '/_authenticated/companies/$companyId/projects': typeof AuthenticatedCompaniesCompanyIdProjectsRoute
@@ -126,8 +153,11 @@ export interface FileRouteTypes {
     | '/'
     | '/signin'
     | '/signup'
+    | '/chats'
+    | '/chats/$chatId'
     | '/episodes/$episodeId'
     | '/api/auth/$'
+    | '/chats/'
     | '/companies/'
     | '/episodes/'
     | '/companies/$companyId/projects'
@@ -138,8 +168,10 @@ export interface FileRouteTypes {
     | '/'
     | '/signin'
     | '/signup'
+    | '/chats/$chatId'
     | '/episodes/$episodeId'
     | '/api/auth/$'
+    | '/chats'
     | '/companies'
     | '/episodes'
     | '/companies/$companyId/projects'
@@ -151,8 +183,11 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/signin'
     | '/signup'
+    | '/_authenticated/chats'
+    | '/_authenticated/chats/$chatId'
     | '/_authenticated/episodes/$episodeId'
     | '/api/auth/$'
+    | '/_authenticated/chats/'
     | '/_authenticated/companies/'
     | '/_authenticated/episodes/'
     | '/_authenticated/companies/$companyId/projects'
@@ -198,6 +233,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/chats': {
+      id: '/_authenticated/chats'
+      path: '/chats'
+      fullPath: '/chats'
+      preLoaderRoute: typeof AuthenticatedChatsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/episodes/': {
       id: '/_authenticated/episodes/'
       path: '/episodes'
@@ -212,6 +254,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCompaniesIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/chats/': {
+      id: '/_authenticated/chats/'
+      path: '/'
+      fullPath: '/chats/'
+      preLoaderRoute: typeof AuthenticatedChatsIndexRouteImport
+      parentRoute: typeof AuthenticatedChatsRoute
+    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -225,6 +274,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/episodes/$episodeId'
       preLoaderRoute: typeof AuthenticatedEpisodesEpisodeIdRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/chats/$chatId': {
+      id: '/_authenticated/chats/$chatId'
+      path: '/$chatId'
+      fullPath: '/chats/$chatId'
+      preLoaderRoute: typeof AuthenticatedChatsChatIdRouteImport
+      parentRoute: typeof AuthenticatedChatsRoute
     }
     '/_authenticated/companies/$companyId/projects': {
       id: '/_authenticated/companies/$companyId/projects'
@@ -250,7 +306,21 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedChatsRouteChildren {
+  AuthenticatedChatsChatIdRoute: typeof AuthenticatedChatsChatIdRoute
+  AuthenticatedChatsIndexRoute: typeof AuthenticatedChatsIndexRoute
+}
+
+const AuthenticatedChatsRouteChildren: AuthenticatedChatsRouteChildren = {
+  AuthenticatedChatsChatIdRoute: AuthenticatedChatsChatIdRoute,
+  AuthenticatedChatsIndexRoute: AuthenticatedChatsIndexRoute,
+}
+
+const AuthenticatedChatsRouteWithChildren =
+  AuthenticatedChatsRoute._addFileChildren(AuthenticatedChatsRouteChildren)
+
 interface AuthenticatedRouteChildren {
+  AuthenticatedChatsRoute: typeof AuthenticatedChatsRouteWithChildren
   AuthenticatedEpisodesEpisodeIdRoute: typeof AuthenticatedEpisodesEpisodeIdRoute
   AuthenticatedCompaniesIndexRoute: typeof AuthenticatedCompaniesIndexRoute
   AuthenticatedEpisodesIndexRoute: typeof AuthenticatedEpisodesIndexRoute
@@ -260,6 +330,7 @@ interface AuthenticatedRouteChildren {
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedChatsRoute: AuthenticatedChatsRouteWithChildren,
   AuthenticatedEpisodesEpisodeIdRoute: AuthenticatedEpisodesEpisodeIdRoute,
   AuthenticatedCompaniesIndexRoute: AuthenticatedCompaniesIndexRoute,
   AuthenticatedEpisodesIndexRoute: AuthenticatedEpisodesIndexRoute,

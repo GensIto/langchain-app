@@ -13,6 +13,9 @@ export default function Header() {
 				<Link to='/episodes' className='hover:text-gray-300 transition-colors'>
 					エピソード
 				</Link>
+				<Link to='/chats' className='hover:text-gray-300 transition-colors'>
+					AIと面接
+				</Link>
 			</nav>
 		</header>
 	);

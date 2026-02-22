@@ -2,6 +2,7 @@ import { configure, getConsoleSink, getLogger } from "@logtape/logtape";
 
 export async function setupLogger() {
 	await configure({
+		reset: true,
 		sinks: {
 			console: getConsoleSink(),
 		},
