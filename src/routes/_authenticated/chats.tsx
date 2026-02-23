@@ -19,7 +19,7 @@ function ChatsLayout() {
 	const [isCreateOpen, setIsCreateOpen] = useState(false);
 
 	return (
-		<div className='flex min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 px-8 py-4'>
+		<div className='flex h-[calc(100vh-3.5rem)] bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 px-8 py-4'>
 			<aside className='w-64 border-r pr-4'>
 				<div className='flex items-center justify-between'>
 					<h2 className='text-lg font-bold text-white mb-4'>Chats</h2>
