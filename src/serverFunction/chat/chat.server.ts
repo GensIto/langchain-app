@@ -4,7 +4,7 @@ import { getLogger } from "@logtape/logtape";
 import { eq, and } from "drizzle-orm";
 
 import { getDb } from "@/db";
-import { chatSessions } from "@/db/chat";
+import { chatMessages, chatSessions } from "@/db/chat";
 import type { RequiredSession } from "@/lib/auth";
 
 import {
@@ -68,7 +68,7 @@ export async function createNewChatSession(data: CreateChatSessionInput, session
 						role: "system",
 						content: `
 						あなたは、面接セッションのタイトルを作成するアシスタントです。
-						ユーザーの志望ポジションと志望業界を考慮して、面接セッションのタイトルを作成してください。
+						ユーザーの志望ポジションと志望業界を考慮して、面接スタイルに応じて、面接セッションのタイトルを作成してください。
 						すべてのフィールドの値は必ず日本語で記述してください。英語は使わないでください。
 						`,
 					},
@@ -126,6 +126,57 @@ export async function createNewChatSession(data: CreateChatSessionInput, session
 		})
 		.returning()
 		.get();
+
+	const systemMessage = [
+		"あなたはプロフェッショナルな面接官です。以下の前提条件に基づいて面接を進行してください。",
+		"",
+		"## 面接の前提条件",
+		`- 面接スタイル: ${data.interviewStyle}`,
+		`- 候補者の志望ポジション: ${data.targetPosition}`,
+		`- 候補者の志望業界: ${data.targetIndustry}`,
+		"",
+		"## あなたの役割",
+		"- 上記の志望ポジション・業界に精通した面接官として振る舞ってください。",
+		"- 面接スタイルに応じて、質問のトーンや難易度を調整してください。",
+		"- 一度に複数の質問をせず、1つずつ質問してください。",
+		"- 候補者の回答に対して、適切な深掘り質問やフォローアップを行ってください。",
+		"",
+		"## 面接の進め方",
+		"1. まず候補者の経歴を確認してください。",
+		"2. 志望動機・業界理解に関する質問を行ってください。",
+		"3. ポジションに関連する専門的な質問を行ってください。",
+		"4. 行動面接（過去の経験に基づく質問）を適宜取り入れてください。",
+		"5. 候補者からの逆質問に対応してください。",
+		"",
+		"## 注意事項",
+		"- 回答は必ず日本語で行ってください。",
+		"- 候補者の回答が曖昧な場合は、具体例を求めるなど深掘りしてください。",
+		"- 面接官としてのリアリティを保ち、適度な緊張感を維持してください。",
+		"- 候補者の良い点は適宜認めつつ、改善点があれば建設的にフィードバックしてください。",
+	].join("\n");
+
+	await Promise.all([
+		// システムメッセージを作成
+		getDb().insert(chatMessages).values({
+			id: crypto.randomUUID(),
+			sessionId: result.id,
+			message: systemMessage,
+			role: "system",
+			tokenCount: 0,
+			createdAt: now,
+			updatedAt: now,
+		}),
+		// 最初のメッセージを作成
+		getDb().insert(chatMessages).values({
+			id: crypto.randomUUID(),
+			sessionId: result.id,
+			message: "ようこそ！面接練習を始めましょう！まずは簡単な経歴を教えてください。",
+			role: "assistant",
+			tokenCount: 0,
+			createdAt: now,
+			updatedAt: now,
+		}),
+	]);
 
 	return result;
 }
