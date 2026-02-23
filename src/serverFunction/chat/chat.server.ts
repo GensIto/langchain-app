@@ -228,14 +228,32 @@ export async function removeChatSession(data: DeleteChatSessionInput, session: R
 
 // ── ChatMessages ──
 
-export function getMessagesBySession(_data: GetChatMessagesInput, _session: RequiredSession) {
-	// TODO: implement
-	throw new Error("Not implemented");
+export async function getMessagesBySession(data: GetChatMessagesInput, _session: RequiredSession) {
+	const result = await getDb()
+		.select()
+		.from(chatMessages)
+		.where(eq(chatMessages.sessionId, data.sessionId));
+
+	if (!result) {
+		logger.warn("Chat messages not found: {sessionId}", { sessionId: data.sessionId });
+		throw new Error("Chat messages not found");
+	}
+
+	logger.info("Fetched {count} chat messages", { count: result.length });
+
+	return result;
 }
 
-export function createNewChatMessage(_data: CreateChatMessageInput, _session: RequiredSession) {
-	// TODO: implement
-	throw new Error("Not implemented");
+export function createNewChatMessage(data: CreateChatMessageInput, _session: RequiredSession) {
+	return getDb().insert(chatMessages).values({
+		id: crypto.randomUUID(),
+		sessionId: data.sessionId,
+		message: data.message,
+		role: data.role,
+		tokenCount: 0,
+		createdAt: new Date(),
+		updatedAt: new Date(),
+	});
 }
 
 // ── ChatMessageEpisodes ──
