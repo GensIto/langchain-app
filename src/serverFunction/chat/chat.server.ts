@@ -16,6 +16,7 @@ import {
 	type GetChatMessagesInput,
 	type LinkChatMessageEpisodeInput,
 	type UpdateChatSessionInput,
+	type SendChatMessageInput,
 } from "./schemas";
 
 const logger = getLogger(["app", "chat"]);
@@ -244,16 +245,172 @@ export async function getMessagesBySession(data: GetChatMessagesInput, _session:
 	return result;
 }
 
-export function createNewChatMessage(data: CreateChatMessageInput, _session: RequiredSession) {
-	return getDb().insert(chatMessages).values({
+export async function streamChat(data: SendChatMessageInput, _session: RequiredSession) {
+	logger.info("Streaming chat: {sessionId}", { sessionId: data.sessionId });
+
+	const createdMsg = await getDb().insert(chatMessages).values({
 		id: crypto.randomUUID(),
 		sessionId: data.sessionId,
 		message: data.message,
-		role: data.role,
+		role: "user",
 		tokenCount: 0,
 		createdAt: new Date(),
 		updatedAt: new Date(),
 	});
+
+	if (!createdMsg) {
+		throw new Error("Failed to create chat message");
+	}
+
+	const chatHistory = await getDb()
+		.select()
+		.from(chatMessages)
+		.where(eq(chatMessages.sessionId, data.sessionId))
+		.orderBy(chatMessages.createdAt);
+
+	logger.info("Chat history count: {count}", { count: chatHistory.length });
+	logger.info("Chat history roles: {roles}", {
+		roles: chatHistory.map((m) => `${m.role}(${m.message.length})`).join(", "),
+	});
+
+	if (chatHistory.length === 0) {
+		throw new Error("Chat history not found");
+	}
+
+	const formattedMessages = chatHistory
+		.filter((m) => m.message)
+		.map((m) => ({
+			role: m.role,
+			content: m.message,
+		}));
+
+	logger.info("[streamChat] Calling env.AI.run (stream: true) with {count} messages", {
+		count: formattedMessages.length,
+	});
+
+	let aiStream: ReadableStream<Uint8Array>;
+	try {
+		const result = await env.AI.run("@cf/qwen/qwen3-30b-a3b-fp8", {
+			messages: formattedMessages,
+			stream: true,
+		});
+		aiStream = result as ReadableStream<Uint8Array>;
+		logger.info("[streamChat] AI stream created successfully");
+	} catch (error) {
+		logger.error("[streamChat] env.AI.run FAILED: {error}", {
+			error: error instanceof Error ? error.message : JSON.stringify(error),
+			stack: error instanceof Error ? error.stack : undefined,
+		});
+		throw error;
+	}
+
+	let fullResponse = "";
+
+	return new ReadableStream<string>({
+		async start(controller) {
+			try {
+				logger.info("[streamChat] ReadableStream start() called");
+				const reader = aiStream.getReader();
+				const decoder = new TextDecoder();
+				let buffer = "";
+				let chunkIndex = 0;
+
+				let readResult = await reader.read();
+				while (!readResult.done) {
+					buffer += decoder.decode(readResult.value, { stream: true });
+					const lines = buffer.split("\n");
+					buffer = lines.pop() ?? "";
+
+					for (const line of lines) {
+						const trimmed = line.trim();
+						if (!trimmed || !trimmed.startsWith("data: ")) continue;
+						const jsonStr = trimmed.slice(6);
+						if (jsonStr === "[DONE]") {
+							logger.info("[streamChat] Received [DONE]");
+							continue;
+						}
+
+						try {
+							const parsed = JSON.parse(jsonStr) as {
+								response?: string;
+								choices?: { delta?: { content?: string; reasoning_content?: string } }[];
+							};
+
+							const delta = parsed.choices?.[0]?.delta;
+							const text = delta?.content ?? parsed.response ?? "";
+
+							if (chunkIndex < 5 || text) {
+								logger.info("[streamChat] chunk[{index}] raw: {raw}", {
+									index: chunkIndex,
+									raw: jsonStr.substring(0, 500),
+								});
+							}
+
+							if (text) {
+								fullResponse += text;
+								controller.enqueue(text);
+							}
+						} catch {
+							logger.warn("[streamChat] Failed to parse SSE data: {data}", {
+								data: jsonStr.substring(0, 200),
+							});
+						}
+						chunkIndex++;
+					}
+					readResult = await reader.read();
+				}
+
+				logger.info("[streamChat] Stream completed - totalChunks: {count}, responseLength: {len}", {
+					count: chunkIndex,
+					len: fullResponse.length,
+				});
+
+				if (fullResponse) {
+					await getDb()
+						.insert(chatMessages)
+						.values({
+							id: crypto.randomUUID(),
+							sessionId: data.sessionId,
+							message: fullResponse,
+							role: "assistant",
+							tokenCount: 0,
+							createdAt: new Date(),
+							updatedAt: new Date(),
+						})
+						.run();
+					logger.info("[streamChat] Assistant message inserted - length: {len}", {
+						len: fullResponse.length,
+					});
+				} else {
+					logger.warn("[streamChat] Empty response - skipping DB insert");
+				}
+
+				controller.close();
+			} catch (error) {
+				logger.error("[streamChat] Error in ReadableStream: {error}", {
+					error: error instanceof Error ? error.message : JSON.stringify(error),
+					stack: error instanceof Error ? error.stack : undefined,
+				});
+				controller.error(error);
+			}
+		},
+	});
+}
+
+export function createNewChatMessage(data: CreateChatMessageInput, _session: RequiredSession) {
+	return getDb()
+		.insert(chatMessages)
+		.values({
+			id: crypto.randomUUID(),
+			sessionId: data.sessionId,
+			message: data.message,
+			role: data.role,
+			tokenCount: 0,
+			createdAt: new Date(),
+			updatedAt: new Date(),
+		})
+		.returning()
+		.get();
 }
 
 // ── ChatMessageEpisodes ──

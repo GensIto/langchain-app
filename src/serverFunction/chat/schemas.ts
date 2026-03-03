@@ -39,8 +39,12 @@ export const getChatMessagesSchema = z.object({
 export const createChatMessageSchema = z.object({
 	sessionId: z.string(),
 	message: z.string().min(1),
-	role: z.enum(["system", "user", "assistant"]),
-	tokenCount: z.number(),
+	role: z.enum(["user"]),
+});
+
+export const sendChatMessageSchema = z.object({
+	sessionId: z.string(),
+	message: z.string().min(1),
 });
 
 // ── ChatMessageEpisodes ──
@@ -63,5 +67,6 @@ export type UpdateChatSessionInput = z.infer<typeof updateChatSessionSchema>;
 export type DeleteChatSessionInput = z.infer<typeof deleteChatSessionSchema>;
 export type GetChatMessagesInput = z.infer<typeof getChatMessagesSchema>;
 export type CreateChatMessageInput = z.infer<typeof createChatMessageSchema>;
+export type SendChatMessageInput = z.infer<typeof sendChatMessageSchema>;
 export type LinkChatMessageEpisodeInput = z.infer<typeof linkChatMessageEpisodeSchema>;
 export type GetChatMessageEpisodesInput = z.infer<typeof getChatMessageEpisodesSchema>;

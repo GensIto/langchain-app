@@ -11,6 +11,7 @@ import {
 	getMessagesBySession,
 	linkMessageEpisode,
 	removeChatSession,
+	streamChat,
 	updateExistingChatSession,
 } from "./chat.server";
 import {
@@ -21,6 +22,7 @@ import {
 	getChatMessagesSchema,
 	getChatSessionSchema,
 	linkChatMessageEpisodeSchema,
+	sendChatMessageSchema,
 	updateChatSessionSchema,
 } from "./schemas";
 
@@ -90,6 +92,14 @@ export const createChatMessage = createServerFn({
 		return createNewChatMessage(data, context.session);
 	});
 
+export const streamChatResponse = createServerFn({
+	method: "POST",
+})
+	.middleware([authMiddleware])
+	.inputValidator(sendChatMessageSchema)
+	.handler(({ data, context }) => {
+		return streamChat(data, context.session);
+	});
 // ── ChatMessageEpisodes ──
 
 export const linkChatMessageEpisode = createServerFn({
